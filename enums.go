@@ -15,3 +15,8 @@ const (
 	BlackKing   = "k"
 	EmptySpace  = ""
 )
+
+const (
+	WhiteTurn = "w"
+	BlackTurn = "b"
+)
