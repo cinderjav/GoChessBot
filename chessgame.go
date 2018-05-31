@@ -67,7 +67,7 @@ func (chessGame *ChessGame) getMovableMoves() []Move {
 				locationString := chessGame.board[i][j]
 				if isWhitePiece(locationString) || locationString == EmptySpace {
 					piece := chessGame.getPiece(locationString, i, j)
-					move := Move{i, j, piece}
+					move := Move{i, j, 0, piece}
 					availableMoves = append(availableMoves, move)
 				}
 			}
@@ -78,7 +78,7 @@ func (chessGame *ChessGame) getMovableMoves() []Move {
 				locationString := chessGame.board[i][j]
 				if isBlackPiece(locationString) || locationString == EmptySpace {
 					piece := chessGame.getPiece(locationString, i, j)
-					move := Move{i, j, piece}
+					move := Move{i, j, 0, piece}
 					availableMoves = append(availableMoves, move)
 				}
 			}

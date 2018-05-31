@@ -5,7 +5,7 @@ import (
 )
 
 type IChessPiece interface {
-	canMove(move Move) bool
+	canMove(move Move, board [8][8]string) bool
 }
 
 type ChessPiece struct {
@@ -32,7 +32,8 @@ type King struct {
 	ChessPiece
 }
 
-func (pawn Pawn) canMove(move Move) bool {
+//Need to in general taking into account blocking pieces
+func (pawn Pawn) canMove(move Move, board [8][8]string) bool {
 	whitePawn := pawn.description == WhitePawn
 	blackPawn := pawn.description == BlackPawn
 	yDistance := math.Abs(float64(move.y) - float64(pawn.y))
@@ -66,22 +67,27 @@ func (pawn Pawn) canMove(move Move) bool {
 	return false
 }
 
-func (rook Rook) canMove(move Move) bool {
+func (rook Rook) canMove(move Move, board [8][8]string) bool {
+	yDistance := math.Abs(float64(move.y) - float64(rook.y))
+	xDistance := math.Abs(float64(move.x) - float64(rook.x))
+	if yDistance > 0 && xDistance > 0 {
+		return false
+	}
+	return true
+}
+
+func (bishop Bishop) canMove(move Move, board [8][8]string) bool {
 	return false
 }
 
-func (bishop Bishop) canMove(move Move) bool {
+func (knight Knight) canMove(move Move, board [8][8]string) bool {
 	return false
 }
 
-func (knight Knight) canMove(move Move) bool {
+func (queen Queen) canMove(move Move, board [8][8]string) bool {
 	return false
 }
 
-func (queen Queen) canMove(move Move) bool {
-	return false
-}
-
-func (king King) canMove(move Move) bool {
+func (king King) canMove(move Move, board [8][8]string) bool {
 	return false
 }

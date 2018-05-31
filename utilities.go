@@ -5,8 +5,8 @@ import (
 )
 
 type Move struct {
-	x, y       int
-	chessPiece IChessPiece
+	x, y, score int
+	chessPiece  IChessPiece
 }
 
 func getChessGame(board [8][8]string, turn string) ChessGame {
@@ -16,7 +16,7 @@ func getChessGame(board [8][8]string, turn string) ChessGame {
 
 func getAllAvailableMovesForTurn(pieces []IChessPiece, chessGame *ChessGame) []Move {
 	movableBoardSpots := chessGame.getMovableMoves()
-	pieceMoves := getAvailablePieceMoves(movableBoardSpots, pieces)
+	pieceMoves := getAvailablePieceMoves(movableBoardSpots, pieces, chessGame.board)
 	return pieceMoves
 }
 
@@ -50,21 +50,26 @@ func isBlackPiece(piece string) bool {
 	return false
 }
 
-func getAvailablePieceMoves(moves []Move, pieces []IChessPiece) []Move {
+func getAvailablePieceMoves(moves []Move, pieces []IChessPiece, board [8][8]string) []Move {
 	var validMoves []Move
 	var validMoveMapping = make(map[IChessPiece][]Move)
 	//think we need to return mapping of piece to moves
 	println(len(moves))
 	for _, move := range moves {
 		for _, piece := range pieces {
-			if piece.canMove(move) {
+			if piece.canMove(move, board) {
 				validMoves = append(validMoves, move)
+				//if I go with map, will remove break
 				validMoveMapping[piece] = append(validMoveMapping[piece], move)
-				break
+				//break
 			}
 		}
 	}
 	println(len(validMoves))
 	fmt.Println(validMoveMapping)
 	return validMoves
+}
+
+func isMoveBlocked() {
+	
 }
