@@ -95,10 +95,11 @@ func (chessGame *ChessGame) getScore() map[string]int {
 func (chessGame *ChessGame) executeMove() Move {
 	pieces := chessGame.getPiecesForTurn()
 	moves := getAllAvailableMovesForTurn(pieces, chessGame)
+	println(moves)
 	//given current available moves, calls a recursive function to get the best move from these available moves
 	//specify a depth level I want to search for start small
 	//fmt.Println(moves)
-	return moves[0]
+	return Move{}
 }
 
 func (chessGame *ChessGame) getPiecesForTurn() []IChessPiece {
