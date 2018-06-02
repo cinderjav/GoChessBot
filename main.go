@@ -9,7 +9,7 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	mux.Handle("/play", http.HandlerFunc(handlePlay))
+	mux.Handle("/move", http.HandlerFunc(handlePlay))
 	log.Fatal(http.ListenAndServe("localhost:8000", mux))
 }
 

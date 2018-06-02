@@ -178,7 +178,7 @@ func (queen Queen) canMove(move Move, board [8][8]string) bool {
 	yDistance := math.Abs(float64(move.y) - float64(queen.y))
 	xDistance := math.Abs(float64(move.x) - float64(queen.x))
 	//not on diagonal and not adjacent
-	if (xDistance != yDistance) && xDistance > 1 && yDistance > 1 {
+	if (xDistance != yDistance) && xDistance >= 1 && yDistance >= 1 {
 		return false
 	}
 

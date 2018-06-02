@@ -305,10 +305,21 @@ func getHighestMoveScoreFromMap(moveMapping map[IChessPiece][]Move) (int, IChess
 	return sumScore, topPiece, topMove
 }
 
-func translateMove(piece IChessPiece, move Move) string {
+func getPieceString(x, y int, board [8][8]string) string {
+	return board[x][y]
+}
+
+func translateMove(piece IChessPiece, move Move, board [8][8]string) string {
 	var pieceNotation string
 	var moveNotation string
 	fmt.Println(piece, move)
+	//send back algebraic and basic just in case
+	// pieceString := getPieceString(piece.xLocation(), piece.yLocation(), board)
+	// //moveString := getPieceString(move.x, move.y, board)
+	// if pieceString == "P" {
+	// 	pieceString = ""
+	// }
+	//pieceNotation += strings.ToUpper(pieceString)
 	switch piece.yLocation() {
 	case 0:
 		pieceNotation += "a"
@@ -385,6 +396,11 @@ func translateMove(piece IChessPiece, move Move) string {
 		moveNotation += "1"
 	}
 
-	return pieceNotation + ":" + moveNotation
+	//need to support the other symbols
+	var sep = "-"
+	// if move.chessPiece != nil {
+	// 	sep = "x"
+	// }
+	return pieceNotation + sep + moveNotation
 
 }

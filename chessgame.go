@@ -94,12 +94,7 @@ func (chessGame *ChessGame) executeMove() string {
 	movesMapping := getAllAvailableMovesForTurn(pieces, chessGame)
 	analyzeMoves(movesMapping, chessGame, 0, 0, chessGame.playerTurn)
 	_, piece, move := getHighestMoveScoreFromMap(movesMapping)
-	moveTranslation := translateMove(piece, move)
-	//analyze all moves and attach score to each move
-	//use scores to pin point best move
-	//translate move
-	//Return the move
-	//println(movesMapping)
+	moveTranslation := translateMove(piece, move, chessGame.board)
 	fmt.Println(movesMapping)
 	return moveTranslation
 }
