@@ -207,26 +207,32 @@ func isMoveBlocked(move Move, x, y int, board [8][8]string) bool {
 
 }
 
-func analyzeMoves(moveMapping map[IChessPiece][]Move, chessGame *ChessGame, level int) {
+func analyzeMoves(moveMapping map[IChessPiece][]Move, chessGame *ChessGame, level int, score int, originalTurn string) {
 	for piece, moves := range moveMapping {
 		for index, move := range moves {
-			score := analyzeMove(piece, move, chessGame.board, chessGame.playerTurn, level)
+			score := analyzeMove(piece, move, chessGame.board, chessGame.playerTurn, level, score, originalTurn)
 			moves := moveMapping[piece]
 			moves[index].score = score
 		}
 	}
 }
 
-func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, level int) int {
+func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, level int, score int, originalTurn string) int {
 	//possible issue not passing along score
 	//implement shouldprune and getindividual move score
 	//reason about the implementation
+	//score needs to take into account my color
 	if shouldPrune(piece, move, board) {
 		return -100
 	}
 	scoreMove := getIndividualMoveScore(piece, move, board)
+	if turn == originalTurn {
+		score += scoreMove
+	} else {
+		score -= scoreMove
+	}
 	if level == MaxRecursiveLevel {
-		return scoreMove
+		return score
 	}
 
 	newBoard := makeBoardMove(piece, move, board)
@@ -234,7 +240,7 @@ func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, 
 	newChessGame := ChessGame{newBoard, newTurn}
 	pieces := newChessGame.getPiecesForTurn()
 	newMovesMapping := getAllAvailableMovesForTurn(pieces, &newChessGame)
-	analyzeMoves(newMovesMapping, &newChessGame, level+1)
+	analyzeMoves(newMovesMapping, &newChessGame, level+1, score, originalTurn)
 	highScore, _, _ := getHighestMoveScoreFromMap(newMovesMapping)
 	return highScore
 }
