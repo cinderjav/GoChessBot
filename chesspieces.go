@@ -8,6 +8,9 @@ import (
 
 type IChessPiece interface {
 	canMove(move Move, board [8][8]string) bool
+	getValue() int
+	xLocation() int
+	yLocation() int
 }
 
 type ChessPiece struct {
@@ -32,6 +35,17 @@ type Queen struct {
 }
 type King struct {
 	ChessPiece
+}
+
+func (pawn Pawn) getValue() int {
+	return PawnScore
+}
+
+func (pawn Pawn) xLocation() int {
+	return pawn.x
+}
+func (pawn Pawn) yLocation() int {
+	return pawn.y
 }
 
 func (pawn Pawn) canMove(move Move, board [8][8]string) bool {
@@ -73,6 +87,17 @@ func (pawn Pawn) canMove(move Move, board [8][8]string) bool {
 	return false
 }
 
+func (rook Rook) getValue() int {
+	return RookScore
+}
+
+func (rook Rook) xLocation() int {
+	return rook.x
+}
+func (rook Rook) yLocation() int {
+	return rook.y
+}
+
 func (rook Rook) canMove(move Move, board [8][8]string) bool {
 	yDistance := math.Abs(float64(move.y) - float64(rook.y))
 	xDistance := math.Abs(float64(move.x) - float64(rook.x))
@@ -91,6 +116,17 @@ func (rook Rook) canMove(move Move, board [8][8]string) bool {
 	return false
 }
 
+func (bishop Bishop) getValue() int {
+	return BishopScore
+}
+
+func (bishop Bishop) xLocation() int {
+	return bishop.x
+}
+func (bishop Bishop) yLocation() int {
+	return bishop.y
+}
+
 func (bishop Bishop) canMove(move Move, board [8][8]string) bool {
 	yDistance := math.Abs(float64(move.y) - float64(bishop.y))
 	xDistance := math.Abs(float64(move.x) - float64(bishop.x))
@@ -106,6 +142,17 @@ func (bishop Bishop) canMove(move Move, board [8][8]string) bool {
 	return true
 }
 
+func (knight Knight) getValue() int {
+	return KnightScore
+}
+
+func (knight Knight) xLocation() int {
+	return knight.x
+}
+func (knight Knight) yLocation() int {
+	return knight.y
+}
+
 func (knight Knight) canMove(move Move, board [8][8]string) bool {
 	yDistance := math.Abs(float64(move.y) - float64(knight.y))
 	xDistance := math.Abs(float64(move.x) - float64(knight.x))
@@ -114,6 +161,17 @@ func (knight Knight) canMove(move Move, board [8][8]string) bool {
 		return true
 	}
 	return false
+}
+
+func (queen Queen) getValue() int {
+	return QueenScore
+}
+
+func (queen Queen) xLocation() int {
+	return queen.x
+}
+func (queen Queen) yLocation() int {
+	return queen.y
 }
 
 func (queen Queen) canMove(move Move, board [8][8]string) bool {
@@ -128,6 +186,17 @@ func (queen Queen) canMove(move Move, board [8][8]string) bool {
 		return false
 	}
 	return true
+}
+
+func (king King) getValue() int {
+	return KingScore
+}
+
+func (king King) xLocation() int {
+	return king.x
+}
+func (king King) yLocation() int {
+	return king.y
 }
 
 func (king King) canMove(move Move, board [8][8]string) bool {

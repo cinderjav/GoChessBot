@@ -20,3 +20,17 @@ const (
 	WhiteTurn = "w"
 	BlackTurn = "b"
 )
+
+const (
+	EmptySpaceScore = 0
+	PawnScore       = 1
+	BishopScore     = 3
+	KnightScore     = 3
+	RookScore       = 5
+	QueenScore      = 10
+	KingScore       = 100
+)
+
+const (
+	MaxRecursiveLevel = 4
+)

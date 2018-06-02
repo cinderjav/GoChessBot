@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -9,25 +10,21 @@ type ChessGame struct {
 	playerTurn string
 }
 
-func (chessGame *ChessGame) movePiece(move Move) {
-
-}
-
 func (chessGame *ChessGame) getPiece(piece string, x, y int) IChessPiece {
 	pieceValue := strings.ToLower(piece)
 	switch pieceValue {
 	case "p":
-		return Pawn{ChessPiece{x, y, 1, piece}}
+		return Pawn{ChessPiece{x, y, PawnScore, piece}}
 	case "r":
-		return Rook{ChessPiece{x, y, 3, piece}}
+		return Rook{ChessPiece{x, y, RookScore, piece}}
 	case "b":
-		return Bishop{ChessPiece{x, y, 2, piece}}
+		return Bishop{ChessPiece{x, y, BishopScore, piece}}
 	case "n":
-		return Knight{ChessPiece{x, y, 2, piece}}
+		return Knight{ChessPiece{x, y, KnightScore, piece}}
 	case "q":
-		return Queen{ChessPiece{x, y, 5, piece}}
+		return Queen{ChessPiece{x, y, QueenScore, piece}}
 	case "k":
-		return King{ChessPiece{x, y, 100, piece}}
+		return King{ChessPiece{x, y, KnightScore, piece}}
 	default:
 		return nil
 	}
@@ -92,14 +89,19 @@ func (chessGame *ChessGame) getScore() map[string]int {
 	return scoreMap
 }
 
-func (chessGame *ChessGame) executeMove() Move {
+func (chessGame *ChessGame) executeMove() string {
 	pieces := chessGame.getPiecesForTurn()
-	moves := getAllAvailableMovesForTurn(pieces, chessGame)
-	println(moves)
-	//given current available moves, calls a recursive function to get the best move from these available moves
-	//specify a depth level I want to search for start small
-	//fmt.Println(moves)
-	return Move{}
+	movesMapping := getAllAvailableMovesForTurn(pieces, chessGame)
+	analyzeMoves(movesMapping, chessGame, 0)
+	_, piece, move := getHighestMoveScoreFromMap(movesMapping)
+	moveTranslation := translateMove(piece, move)
+	//analyze all moves and attach score to each move
+	//use scores to pin point best move
+	//translate move
+	//Return the move
+	//println(movesMapping)
+	fmt.Println(movesMapping)
+	return moveTranslation
 }
 
 func (chessGame *ChessGame) getPiecesForTurn() []IChessPiece {
