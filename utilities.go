@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -223,7 +224,10 @@ func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, 
 	//reason about the implementation
 	//score needs to take into account my color
 	if shouldPrune(piece, move, board) {
-		return -100
+		if turn == originalTurn {
+			return score + (KingScore * (MaxRecursiveLevel - level))
+		}
+		return score + (-KingScore * (MaxRecursiveLevel - level))
 	}
 	scoreMove := getIndividualMoveScore(piece, move, board)
 	if turn == originalTurn {
@@ -246,14 +250,25 @@ func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, 
 }
 
 func shouldPrune(piece IChessPiece, move Move, board [8][8]string) bool {
-	if piece.getValue() == 3 {
-		return true
+	//this function will can return high value end game
+	//need to make sure smallers turns are favored, pass in recursive level
+	if move.chessPiece != nil {
+		if move.chessPiece.getValue() == KingScore {
+			return true
+		}
 	}
+
 	return false
 }
 
 func getIndividualMoveScore(piece IChessPiece, move Move, board [8][8]string) int {
-	return 1
+	//should try preventing dumb moves? Not sure score might handle it
+	if move.chessPiece != nil {
+		//need to consider if I get eaten but opponent score will take that into account
+		return move.chessPiece.getValue()
+	}
+
+	return 0
 }
 
 func makeBoardMove(piece IChessPiece, move Move, board [8][8]string) [8][8]string {
@@ -271,11 +286,15 @@ func getNextPlayerTurn(currentTurn string) string {
 }
 
 func getHighestMoveScoreFromMap(moveMapping map[IChessPiece][]Move) (int, IChessPiece, Move) {
-	score := 0
+	score := -1000000
 	var topMove Move
 	var topPiece IChessPiece
+	sumScore := 0
+	sumCount := 0
 	for piece, moves := range moveMapping {
 		for _, move := range moves {
+			sumScore += move.score
+			sumCount++
 			if move.score > score {
 				score = move.score
 				topMove = move
@@ -283,12 +302,13 @@ func getHighestMoveScoreFromMap(moveMapping map[IChessPiece][]Move) (int, IChess
 			}
 		}
 	}
-	return score, topPiece, topMove
+	return sumScore, topPiece, topMove
 }
 
 func translateMove(piece IChessPiece, move Move) string {
 	var pieceNotation string
 	var moveNotation string
+	fmt.Println(piece, move)
 	switch piece.yLocation() {
 	case 0:
 		pieceNotation += "a"
