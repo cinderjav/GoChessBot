@@ -11,6 +11,7 @@ type IChessPiece interface {
 	getValue() int
 	xLocation() int
 	yLocation() int
+	getCopy(x, y int, turn string) IChessPiece
 }
 
 type ChessPiece struct {
@@ -48,12 +49,22 @@ func (pawn Pawn) yLocation() int {
 	return pawn.y
 }
 
+func (pawn Pawn) getCopy(x, y int, turn string) IChessPiece {
+	if turn == WhiteTurn {
+		return Pawn{ChessPiece{x, y, PawnScore, WhitePawn}}
+	}
+	return Pawn{ChessPiece{x, y, PawnScore, BlackPawn}}
+}
+
 func (pawn Pawn) canMove(move Move, board [8][8]string) bool {
 	whitePawn := pawn.description == WhitePawn
 	blackPawn := pawn.description == BlackPawn
 	yDistance := math.Abs(float64(move.y) - float64(pawn.y))
 	xDistance := math.Abs(float64(move.x) - float64(pawn.x))
 
+	if move.x == pawn.x && move.y == pawn.y {
+		return false
+	}
 	//zDistance := math.Abs(float64(move.x)-float64(pawn.x)) + math.Abs(float64(move.y)-float64(pawn.y))
 	if move.chessPiece != nil && (move.y == pawn.y) {
 		return false
@@ -91,6 +102,13 @@ func (rook Rook) getValue() int {
 	return RookScore
 }
 
+func (rook Rook) getCopy(x, y int, turn string) IChessPiece {
+	if turn == WhiteTurn {
+		return Rook{ChessPiece{x, y, RookScore, WhiteRook}}
+	}
+	return Rook{ChessPiece{x, y, RookScore, BlackRook}}
+}
+
 func (rook Rook) xLocation() int {
 	return rook.x
 }
@@ -101,6 +119,11 @@ func (rook Rook) yLocation() int {
 func (rook Rook) canMove(move Move, board [8][8]string) bool {
 	yDistance := math.Abs(float64(move.y) - float64(rook.y))
 	xDistance := math.Abs(float64(move.x) - float64(rook.x))
+
+	if move.x == rook.x && move.y == rook.y {
+		return false
+	}
+
 	if yDistance > 0 && xDistance > 0 {
 		return false
 	}
@@ -120,6 +143,13 @@ func (bishop Bishop) getValue() int {
 	return BishopScore
 }
 
+func (bishop Bishop) getCopy(x, y int, turn string) IChessPiece {
+	if turn == WhiteTurn {
+		return Bishop{ChessPiece{x, y, BishopScore, WhiteBishop}}
+	}
+	return Bishop{ChessPiece{x, y, BishopScore, BlackBishop}}
+}
+
 func (bishop Bishop) xLocation() int {
 	return bishop.x
 }
@@ -130,6 +160,10 @@ func (bishop Bishop) yLocation() int {
 func (bishop Bishop) canMove(move Move, board [8][8]string) bool {
 	yDistance := math.Abs(float64(move.y) - float64(bishop.y))
 	xDistance := math.Abs(float64(move.x) - float64(bishop.x))
+
+	if move.x == bishop.x && move.y == bishop.y {
+		return false
+	}
 
 	if xDistance != yDistance {
 		return false
@@ -146,6 +180,13 @@ func (knight Knight) getValue() int {
 	return KnightScore
 }
 
+func (knight Knight) getCopy(x, y int, turn string) IChessPiece {
+	if turn == WhiteTurn {
+		return Knight{ChessPiece{x, y, KnightScore, WhiteKnight}}
+	}
+	return Knight{ChessPiece{x, y, KnightScore, BlackKnight}}
+}
+
 func (knight Knight) xLocation() int {
 	return knight.x
 }
@@ -157,6 +198,10 @@ func (knight Knight) canMove(move Move, board [8][8]string) bool {
 	yDistance := math.Abs(float64(move.y) - float64(knight.y))
 	xDistance := math.Abs(float64(move.x) - float64(knight.x))
 
+	if move.x == knight.x && move.y == knight.y {
+		return false
+	}
+
 	if (xDistance == 2 && yDistance == 1) || (yDistance == 2 && xDistance == 1) {
 		return true
 	}
@@ -165,6 +210,13 @@ func (knight Knight) canMove(move Move, board [8][8]string) bool {
 
 func (queen Queen) getValue() int {
 	return QueenScore
+}
+
+func (queen Queen) getCopy(x, y int, turn string) IChessPiece {
+	if turn == WhiteTurn {
+		return Queen{ChessPiece{x, y, QueenScore, WhiteQueen}}
+	}
+	return Queen{ChessPiece{x, y, QueenScore, BlackQueen}}
 }
 
 func (queen Queen) xLocation() int {
@@ -177,6 +229,10 @@ func (queen Queen) yLocation() int {
 func (queen Queen) canMove(move Move, board [8][8]string) bool {
 	yDistance := math.Abs(float64(move.y) - float64(queen.y))
 	xDistance := math.Abs(float64(move.x) - float64(queen.x))
+
+	if move.x == queen.x && move.y == queen.y {
+		return false
+	}
 	//not on diagonal and not adjacent
 	if (xDistance != yDistance) && xDistance >= 1 && yDistance >= 1 {
 		return false
@@ -192,6 +248,13 @@ func (king King) getValue() int {
 	return KingScore
 }
 
+func (king King) getCopy(x, y int, turn string) IChessPiece {
+	if turn == WhiteTurn {
+		return King{ChessPiece{x, y, KingScore, WhiteKing}}
+	}
+	return King{ChessPiece{x, y, KingScore, BlackKing}}
+}
+
 func (king King) xLocation() int {
 	return king.x
 }
@@ -202,6 +265,10 @@ func (king King) yLocation() int {
 func (king King) canMove(move Move, board [8][8]string) bool {
 	yDistance := math.Abs(float64(move.y) - float64(king.y))
 	xDistance := math.Abs(float64(move.x) - float64(king.x))
+
+	if move.x == king.x && move.y == king.y {
+		return false
+	}
 
 	if xDistance > 1 || yDistance > 1 {
 		return false

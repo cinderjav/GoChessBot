@@ -23,12 +23,12 @@ const (
 
 const (
 	EmptySpaceScore = 0
-	PawnScore       = 1
-	BishopScore     = 3
-	KnightScore     = 3
-	RookScore       = 5
-	QueenScore      = 10
-	KingScore       = 20
+	PawnScore       = 3
+	BishopScore     = 6
+	KnightScore     = 6
+	RookScore       = 10
+	QueenScore      = 20
+	KingScore       = 40
 )
 
-var MaxRecursiveLevel = 4
+var MaxRecursiveLevel = 3
