@@ -208,32 +208,36 @@ func isMoveBlocked(move Move, x, y int, board [8][8]string) bool {
 
 }
 
-func analyzeMoves(moveMapping map[IChessPiece][]Move, chessGame *ChessGame, level int, score int, originalTurn string) {
+func analyzeMoves(moveMapping map[IChessPiece][]Move, chessGame *ChessGame, level int, score int, originalTurn string, prevEaten IChessPiece) {
 	for piece, moves := range moveMapping {
 		for index, move := range moves {
-			score := analyzeMove(piece, move, chessGame.board, chessGame.playerTurn, level, score, originalTurn)
+			score := analyzeMove(piece, move, chessGame.board, chessGame.playerTurn, level, score, originalTurn, prevEaten)
 			moves := moveMapping[piece]
 			moves[index].score = score
+			// go func(piece IChessPiece, move Move, board [8][8]string, turn string, level int, score int, originalTurn string, moveMapping map[IChessPiece][]Move) {
+			// 	scores <- analyzeMove(piece, move, board, turn, level, score, originalTurn)
+			// 	moves := moveMapping[piece]
+			// 	newScore := <-scores
+			// 	moves[index].score = newScore
+			// }(piece, move, chessGame.board, chessGame.playerTurn, level, score, originalTurn, moveMapping)
 		}
 	}
 }
 
-func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, level int, score int, originalTurn string) int {
+func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, level int, score int, originalTurn string, lastEaten IChessPiece) int {
 	//possible issue not passing along score
 	//implement shouldprune and getindividual move score
 	//reason about the implementation
 	//score needs to take into account my color
-	if shouldPrune(piece, move, board) {
-		if turn == originalTurn {
-			return score + (KingScore * (MaxRecursiveLevel - level))
-		}
-		return score + (-KingScore * ((MaxRecursiveLevel - level) * 20))
+	prune, value := shouldPrune(piece, move, board, turn == originalTurn, level, score, lastEaten)
+	if prune {
+		return score + (value * (MaxRecursiveLevel - level))
 	}
-	scoreMove := getIndividualMoveScore(piece, move, board)
+	scoreMove := getIndividualMoveScore(piece, move, board, turn)
 	if turn == originalTurn {
-		score += scoreMove
+		score += (scoreMove * (MaxRecursiveLevel - level))
 	} else {
-		score -= scoreMove
+		score -= (scoreMove * (MaxRecursiveLevel - level))
 	}
 	if level == MaxRecursiveLevel {
 		return score
@@ -244,25 +248,52 @@ func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, 
 	newChessGame := ChessGame{newBoard, newTurn}
 	pieces := newChessGame.getPiecesForTurn()
 	newMovesMapping := getAllAvailableMovesForTurn(pieces, &newChessGame)
-	analyzeMoves(newMovesMapping, &newChessGame, level+1, score, originalTurn)
+	if move.chessPiece != nil {
+		lastEaten = move.chessPiece
+	}
+	analyzeMoves(newMovesMapping, &newChessGame, level+1, score, originalTurn, lastEaten)
 	highScore, _, _ := getHighestMoveScoreFromMap(newMovesMapping)
 	return highScore
 }
 
-func shouldPrune(piece IChessPiece, move Move, board [8][8]string) bool {
+func shouldPrune(piece IChessPiece, move Move, board [8][8]string, initialTurn bool, level int, score int, lastEaten IChessPiece) (bool, int) {
 	//this function will can return high value end game
 	//need to make sure smallers turns are favored, pass in recursive level
 	if move.chessPiece != nil {
-		if move.chessPiece.getValue() == KingScore {
-			return true
+		if move.chessPiece.getValue() == KingScore && initialTurn {
+			return true, KingScore
+		}
+
+		if move.chessPiece.getValue() == KingScore && !initialTurn && level != 1 {
+			return true, -KingScore
+		}
+
+		if move.chessPiece.getValue() == KingScore && !initialTurn && level == 1 {
+			return true, -1000000
+		}
+
+		if lastEaten == nil && !initialTurn && level == 1 {
+			return true, -1000000
+		}
+
+		if lastEaten != nil {
+			if move.chessPiece.getValue() > lastEaten.getValue() && !initialTurn && level == 1 {
+				return true, -1000000
+			}
 		}
 	}
 
-	return false
+	return false, 0
 }
 
-func getIndividualMoveScore(piece IChessPiece, move Move, board [8][8]string) int {
+func getIndividualMoveScore(piece IChessPiece, move Move, board [8][8]string, turn string) int {
 	//should try preventing dumb moves? Not sure score might handle it
+	// var nextTurn = getNextPlayerTurn(turn)
+	// var newChess = ChessGame{board, nextTurn}
+	// var opponentPieces = newChess.getPiecesForTurn()
+	// movesMappingOpponents := getAllAvailableMovesForTurn(opponentPieces, &newChess)
+
+	// var targetable =
 	if move.chessPiece != nil {
 		//need to consider if I get eaten but opponent score will take that into account
 		return move.chessPiece.getValue()
@@ -286,7 +317,7 @@ func getNextPlayerTurn(currentTurn string) string {
 }
 
 func getHighestMoveScoreFromMap(moveMapping map[IChessPiece][]Move) (int, IChessPiece, Move) {
-	score := -1000000
+	score := -10000000
 	var topMove Move
 	var topPiece IChessPiece
 	sumScore := 0

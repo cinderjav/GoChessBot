@@ -99,7 +99,7 @@ func (chessGame *ChessGame) executeMove() string {
 	}
 	println(MaxRecursiveLevel)
 	movesMapping := getAllAvailableMovesForTurn(pieces, chessGame)
-	analyzeMoves(movesMapping, chessGame, 0, 0, chessGame.playerTurn)
+	analyzeMoves(movesMapping, chessGame, 0, 0, chessGame.playerTurn, nil)
 	_, piece, move := getHighestMoveScoreFromMap(movesMapping)
 	moveTranslation := translateMove(piece, move, chessGame.board)
 	fmt.Println(movesMapping)
