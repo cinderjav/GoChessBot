@@ -91,6 +91,13 @@ func (chessGame *ChessGame) getScore() map[string]int {
 
 func (chessGame *ChessGame) executeMove() string {
 	pieces := chessGame.getPiecesForTurn()
+	if len(pieces) < 9 {
+		MaxRecursiveLevel = 5
+	}
+	if len(pieces) < 6 {
+		MaxRecursiveLevel = 6
+	}
+	println(MaxRecursiveLevel)
 	movesMapping := getAllAvailableMovesForTurn(pieces, chessGame)
 	analyzeMoves(movesMapping, chessGame, 0, 0, chessGame.playerTurn)
 	_, piece, move := getHighestMoveScoreFromMap(movesMapping)

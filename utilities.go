@@ -227,7 +227,7 @@ func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, 
 		if turn == originalTurn {
 			return score + (KingScore * (MaxRecursiveLevel - level))
 		}
-		return score + (-KingScore * (MaxRecursiveLevel - level))
+		return score + (-KingScore * ((MaxRecursiveLevel - level) * 20))
 	}
 	scoreMove := getIndividualMoveScore(piece, move, board)
 	if turn == originalTurn {
