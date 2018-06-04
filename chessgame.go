@@ -64,7 +64,7 @@ func (chessGame *ChessGame) getMovableMoves() []Move {
 				locationString := chessGame.board[i][j]
 				if isWhitePiece(locationString) || locationString == EmptySpace {
 					piece := chessGame.getPiece(locationString, i, j)
-					move := Move{i, j, 0, piece}
+					move := Move{i, j, 0, 0, 0, piece}
 					availableMoves = append(availableMoves, move)
 				}
 			}
@@ -75,7 +75,7 @@ func (chessGame *ChessGame) getMovableMoves() []Move {
 				locationString := chessGame.board[i][j]
 				if isBlackPiece(locationString) || locationString == EmptySpace {
 					piece := chessGame.getPiece(locationString, i, j)
-					move := Move{i, j, 0, piece}
+					move := Move{i, j, 0, 0, 0, piece}
 					availableMoves = append(availableMoves, move)
 				}
 			}
@@ -99,10 +99,10 @@ func (chessGame *ChessGame) executeMove() string {
 	}
 	println(MaxRecursiveLevel)
 	movesMapping := getAllAvailableMovesForTurn(pieces, chessGame)
-	analyzeMoves(movesMapping, chessGame, 0, 0, chessGame.playerTurn, nil)
-	_, piece, move := getHighestMoveScoreFromMap(movesMapping)
+	prunedMap := analyzeMoves(movesMapping, chessGame, 0, 0, chessGame.playerTurn, nil, 0, 0)
+	_, piece, move, _, _ := getHighestMoveScoreFromMap(prunedMap)
 	moveTranslation := translateMove(piece, move, chessGame.board)
-	fmt.Println(movesMapping)
+	fmt.Println(prunedMap)
 	return moveTranslation
 }
 
