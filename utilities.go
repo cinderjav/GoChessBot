@@ -209,7 +209,7 @@ func isMoveBlocked(move Move, x, y int, board [8][8]string) bool {
 }
 
 func getKing(turn string, board [8][8]string) IChessPiece {
-	var newChess = ChessGame{board, turn}
+	var newChess = getChessGame(board, turn)
 	var turnPieces = newChess.getPiecesForTurn()
 	for _, piece := range turnPieces {
 		if piece.getValue() == KingScore {
@@ -219,12 +219,7 @@ func getKing(turn string, board [8][8]string) IChessPiece {
 	return nil
 }
 
-func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, level int, initialTurn bool, lastEaten IChessPiece) bool {
-	// if piece.getValue() == KingScore || piece.getValue() == QueenScore {
-	// 	return true
-	// }
-	// return false
-	defending := isEnemyDefendingMove(move, turn, board)
+func pruneMoveKingChecked(piece IChessPiece, turn string, board [8][8]string, move Move, defending bool) bool {
 	if piece.getValue() != KingScore {
 		KingCopy := getKing(turn, board)
 		if KingCopy != nil {
@@ -232,9 +227,6 @@ func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, le
 			if isKingChecked {
 				simBoard := makeBoardMove(piece, move, board)
 				isKingCheckedAfterSim := isEnemyDefendingMove(Move{KingCopy.xLocation(), KingCopy.yLocation(), 0, 0, 0, KingCopy}, turn, simBoard)
-				if level == 0 {
-					fmt.Println(piece)
-				}
 				if isKingCheckedAfterSim {
 					return true
 				}
@@ -246,43 +238,106 @@ func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, le
 	if piece.getValue() == KingScore && defending {
 		return true
 	}
+	return false
+}
 
+func isCheckmateMove(piece IChessPiece, move Move, turn string, board [8][8]string, defending bool, level int) bool {
+	//get next turn to get opponent king
 	newTurn := getNextPlayerTurn(turn)
+	//get opponent king
 	opponentKingCopy := getKing(newTurn, board)
+	//simulate a move on the original turn to move piece to spot
 	simBoard := makeBoardMove(piece, move, board)
-	//checks to see if any of my guys can move to king after I move
+	//checks to see if any of my guys can move to opponent king after I move, therefore making opponent king checked
 	isOpponentKingCheckedWithMove := isEnemyDefendingMove(Move{opponentKingCopy.xLocation(), opponentKingCopy.yLocation(), 0, 0, 0, opponentKingCopy}, newTurn, simBoard)
-	//now check to see if I am targetable by the enemy
+	//now check to see if I am targetable by the enemy once I get the king checked
+	//problem is king is defending move, but his move is also defended
+	// if level == 0 {
+	// 	fmt.Println(piece, move, !defending && isOpponentKingCheckedWithMove, defending, isOpponentKingCheckedWithMove, opponentKingCopy)
+	// }
 	if !defending && isOpponentKingCheckedWithMove {
 		//see if another piece from an enemy move, may cause king to be unchecked
+		//make it the opponents turn now, after sim moves my piece
 		var newChess = ChessGame{simBoard, newTurn}
+		//get all pieces for opponent
 		var opponentPieces = newChess.getPiecesForTurn()
+		//get all the opponents potential moves in respond to my move
 		movesMappingOpponents := getAllAvailableMovesForTurn(opponentPieces, &newChess)
+		//for each piece, check his moves, I need to see if they can remove the king being checked
+		//King should not be allowed to eat a defended move to clear check
 		for pieceEnemy, moves := range movesMappingOpponents {
+			//var countSafe = 0
 			for _, moveEnemy := range moves {
+				//need to sim enemy making available move to determine if it would remove check
+				//what if straight up block sacrifice?
 				simBoardNew := makeBoardMove(pieceEnemy, moveEnemy, simBoard)
-				var chessTwo = ChessGame{simBoardNew, newTurn}
-				var opponentPiecesTwo = chessTwo.getPiecesForTurn()
-				for pieceAgain := range opponentPiecesTwo {
+				//if king I want to move opponent king copy
+				if pieceEnemy.getValue() == KingScore {
+					opponentKingCopy = getKing(newTurn, simBoardNew)
+				}
+				//create a new chess object with the newboard after the move
+				//change control of turn back to original
+				var chessTwo = ChessGame{simBoardNew, turn}
+				//see if king is still checked by iterating through and see if i can still attack the king
+				//if i find a piece that can attack the king, then that piece was not sufficient in saving checkmate
+				//if I cant find a piece that can attack the king, then no checkmate is present
+				var originalPieces = chessTwo.getPiecesForTurn()
+				var countMoveKing = 0
+				for _, pieceAgain := range originalPieces {
+					//check to see if any of pieces can still attack king, if any are found, then we have a checkmate for this move
+					//we need to go through all moves, and if we find a move that does not allow king to be checked then no checkmate
+					//if I cant move there, that is a good thing for the enemy no checkmate
+					if pieceAgain.canMove(Move{opponentKingCopy.xLocation(), opponentKingCopy.yLocation(), 0, 0, 0, opponentKingCopy}, simBoardNew) {
+						countMoveKing++
+					}
 					//isKingChecked()
 					//if any remove check break
 				}
+				//if counrMoveKing > 1, not a life saving move for enemy
+				//keep checking
+				//if count = 0, doesn't mean it is over, it means he founds a safe spot
+
+				if countMoveKing == 0 && len(originalPieces) > 0 {
+					return false
+				}
 			}
+			//check here if piece could not find empty spot
 		}
+		return true
+	}
+	return false
+}
+
+func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, level int, initialTurn bool, lastEaten IChessPiece) (bool, bool) {
+	//change defending moves to simulate the move first
+	postMoveBoard := makeBoardMove(piece, move, board)
+	defending := isEnemyDefendingMove(move, turn, postMoveBoard)
+	pruneKingChecked := pruneMoveKingChecked(piece, turn, board, move, defending)
+	if pruneKingChecked {
+		return true, false
 	}
 
-	//prune out other moves if checkmate
-	//think about how to bubble up negative scores from before
-	//you have a move, that puts opponent king in check, he can't eat you or safely move
-	//No other move for opponent will remove check from king
-	if move.chessPiece != nil {
+	if isCheckmateMove(piece, move, turn, board, defending, level) {
+		if level == 0 {
+			fmt.Println("Check mate move found!")
+		}
 
+		//prune all other moves in map, this is clearly the best move
+		//idea is to limit score for this path, should result in much lower score propagated up to original move
+		return false, true
+	}
+
+	if move.chessPiece != nil {
+		//think about if these conditions should be a score hit or a prune
+		//ideally would need to find a way to propagate up, score might be only way
+
+		//why do it need this? This is actually good thing, move to score
 		if move.chessPiece.getValue() == KingScore && initialTurn {
-			return true
+			return false, true
 		}
 
 		if move.chessPiece.getValue() == KingScore && !initialTurn {
-			return true
+			return false, true
 		}
 
 		//test
@@ -290,22 +345,22 @@ func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, le
 		movePieceValue := move.chessPiece.getValue()
 		diffValue := movePieceValue - piece.getValue()
 		if (lastEaten == nil && !initialTurn && level == 1) && (!defending || diffValue > 0) {
-			return true
+			return true, false
 		}
 
 		if lastEaten != nil {
 			lastEatenValue := lastEaten.getValue()
 			combinedValue := lastEatenValue + piece.getValue()
 			if move.chessPiece.getValue() > lastEaten.getValue() && !initialTurn && level == 1 && !defending {
-				return true
+				return true, false
 			}
 			if defending && combinedValue < move.chessPiece.getValue() && !initialTurn && level == 1 {
-				return true
+				return true, false
 			}
 		}
 	}
 
-	return false
+	return false, false
 }
 
 func pruneMap(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string, level int, originalTurn string, prevEaten IChessPiece) map[IChessPiece][]Move {
@@ -313,7 +368,12 @@ func pruneMap(moveMapping map[IChessPiece][]Move, board [8][8]string, turn strin
 	var pruneList []Move
 	for piece, moves := range moveMapping {
 		for _, move := range moves {
-			prune := pruneMove(piece, move, board, turn, level, turn == originalTurn, prevEaten)
+			prune, pruneAll := pruneMove(piece, move, board, turn, level, turn == originalTurn, prevEaten)
+			if pruneAll {
+				prunedMapAll := make(map[IChessPiece][]Move)
+				prunedMapAll[piece] = append(prunedMapAll[piece], move)
+				return prunedMapAll
+			}
 			if prune {
 				pruneList = append(pruneList, move)
 			} else {
@@ -389,6 +449,7 @@ func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, 
 // func shouldPrune(piece IChessPiece, move Move, board [8][8]string, initialTurn bool, level int, score int, lastEaten IChessPiece, turn string) (bool, int) {
 // 	//this function will can return high value end game
 // 	//need to make sure smallers turns are favored, pass in recursive level
+//A move which results in an opponent king having no moves, and that move is not defended is a good move?
 // 	if move.chessPiece != nil {
 // 		defending := isEnemyDefendingMove(move, turn, board)
 
@@ -447,12 +508,25 @@ func getIndividualMoveScore(piece IChessPiece, move Move, board [8][8]string, tu
 }
 
 func isEnemyDefendingMove(move Move, turn string, board [8][8]string) bool {
-	//prob want to make the move here then check
+	//problem is king is defending move, but his move is also defended
 	var nextTurn = getNextPlayerTurn(turn)
 	var newChess = ChessGame{board, nextTurn}
+
 	var opponentPieces = newChess.getPiecesForTurn()
 	for _, piece := range opponentPieces {
-		if piece.canMove(move, board) {
+		//want to check if the piece is king, and they can move there,
+		if (piece.canMove(move, board)) && (piece.getValue() == KingScore) {
+			//get
+			var boardAfterMove = makeBoardMove(piece, move, board)
+			var newChessKing = ChessGame{boardAfterMove, nextTurn}
+			var myPieces = newChessKing.getPiecesForTurn()
+			for _, pieceKingMove := range myPieces {
+				//if king will die if he makes move, it is not defensible
+				if pieceKingMove.canMove(move, boardAfterMove) {
+					return false
+				}
+			}
+		} else if piece.canMove(move, board) {
 			return true
 		}
 	}

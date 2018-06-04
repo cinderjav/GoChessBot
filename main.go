@@ -25,10 +25,15 @@ func handlePlay(w http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Println(fenObject)
+	executedMove := Run(fenObject)
+	w.Write([]byte(executedMove))
+}
+
+func Run(fenObject FenRequest) string {
 	board, turn := fenParser(fenObject.Fen)
 	chessGame := getChessGame(board, turn)
 	executedMove := chessGame.executeMove()
-	w.Write([]byte(executedMove))
+	return executedMove
 }
 
 type FenRequest struct {
