@@ -273,6 +273,10 @@ func shouldPrune(piece IChessPiece, move Move, board [8][8]string, initialTurn b
 		if move.chessPiece.getValue() == KingScore && !initialTurn && level == 1 {
 			return true, -10000000
 		}
+
+		if level == 0 && piece.getValue() == KingScore && defending {
+			return true, -100000000
+		}
 		//test
 		//and not defended, this condition is ok if piece if defended and its value is less than attacker
 		movePieceValue := move.chessPiece.getValue()
