@@ -327,6 +327,8 @@ func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, le
 		return false, true
 	}
 
+	//prune any move that results in checkmate after I move
+
 	if move.chessPiece != nil {
 		//think about if these conditions should be a score hit or a prune
 		//ideally would need to find a way to propagate up, score might be only way
@@ -345,17 +347,17 @@ func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, le
 		movePieceValue := move.chessPiece.getValue()
 		diffValue := movePieceValue - piece.getValue()
 		if (lastEaten == nil && !initialTurn && level == 1) && (!defending || diffValue > 0) {
-			return true, false
+			return false, false
 		}
 
 		if lastEaten != nil {
 			lastEatenValue := lastEaten.getValue()
 			combinedValue := lastEatenValue + piece.getValue()
 			if move.chessPiece.getValue() > lastEaten.getValue() && !initialTurn && level == 1 && !defending {
-				return true, false
+				return false, true
 			}
 			if defending && combinedValue < move.chessPiece.getValue() && !initialTurn && level == 1 {
-				return true, false
+				return false, true
 			}
 		}
 	}
@@ -383,10 +385,6 @@ func pruneMap(moveMapping map[IChessPiece][]Move, board [8][8]string, turn strin
 	}
 
 	//moveMapping = prunedMap
-	if level == 0 {
-		fmt.Println(prunedMap)
-		fmt.Println(pruneList)
-	}
 	return prunedMap
 	// for _, badMove := range pruneMoves {
 	// 	delete(moveMapping, badPiece)
@@ -419,10 +417,10 @@ func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, 
 	//implement shouldprune and getindividual move score
 	//reason about the implementation
 	//score needs to take into account my color
-	// prune, value := shouldPrune(piece, move, board, turn == originalTurn, level, score, lastEaten, turn)
-	// if prune {
-	// 	return score + (value * ((MaxRecursiveLevel + 1) - level))
-	// }
+	prune, value := shouldPrune(piece, move, board, turn == originalTurn, level, score, lastEaten, turn)
+	if prune {
+		return score + (value * ((MaxRecursiveLevel + 1) - level)), 0, 0
+	}
 	scoreMove := getIndividualMoveScore(piece, move, board, turn)
 	if turn == originalTurn {
 		score += (scoreMove * ((MaxRecursiveLevel + 1) - level))
@@ -446,50 +444,47 @@ func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, 
 	return highScore, averageScore, lenMoves
 }
 
-// func shouldPrune(piece IChessPiece, move Move, board [8][8]string, initialTurn bool, level int, score int, lastEaten IChessPiece, turn string) (bool, int) {
-// 	//this function will can return high value end game
-// 	//need to make sure smallers turns are favored, pass in recursive level
-//A move which results in an opponent king having no moves, and that move is not defended is a good move?
-// 	if move.chessPiece != nil {
-// 		defending := isEnemyDefendingMove(move, turn, board)
+func shouldPrune(piece IChessPiece, move Move, board [8][8]string, initialTurn bool, level int, score int, lastEaten IChessPiece, turn string) (bool, int) {
+	//this function will can return high value end game
+	//need to make sure smallers turns are favored, pass in recursive level
+	//A move which results in an opponent king having no moves, and that move is not defended is a good move?
+	if move.chessPiece != nil {
+		defending := isEnemyDefendingMove(move, turn, board)
 
-// 		if move.chessPiece.getValue() == KingScore && initialTurn {
-// 			return true, KingScore
-// 		}
+		if move.chessPiece.getValue() == KingScore && initialTurn {
+			return true, KingScore
+		}
 
-// 		if move.chessPiece.getValue() == KingScore && !initialTurn && level != 1 {
-// 			return true, -KingScore
-// 		}
+		if move.chessPiece.getValue() == KingScore && !initialTurn && level != 1 {
+			return true, -KingScore
+		}
 
-// 		if move.chessPiece.getValue() == KingScore && !initialTurn && level == 1 {
-// 			return true, -10000000
-// 		}
+		if move.chessPiece.getValue() == KingScore && !initialTurn && level == 1 {
+			return true, -KingScore * 1000
+		}
 
-// 		if level == 0 && piece.getValue() == KingScore && defending {
-// 			return true, -100000000
-// 		}
-// 		//test
-// 		//and not defended, this condition is ok if piece if defended and its value is less than attacker
-// 		movePieceValue := move.chessPiece.getValue()
-// 		diffValue := movePieceValue - piece.getValue()
-// 		if (lastEaten == nil && !initialTurn && level == 1) && (!defending || diffValue > 0) {
-// 			return true, -6000000
-// 		}
+		//test
+		//and not defended, this condition is ok if piece if defended and its value is less than attacker
+		movePieceValue := move.chessPiece.getValue()
+		diffValue := movePieceValue - piece.getValue()
+		if (lastEaten == nil && !initialTurn && level == 1) && (!defending || diffValue > 0) {
+			return true, -KingScore * 100
+		}
 
-// 		if lastEaten != nil {
-// 			lastEatenValue := lastEaten.getValue()
-// 			combinedValue := lastEatenValue + piece.getValue()
-// 			if move.chessPiece.getValue() > lastEaten.getValue() && !initialTurn && level == 1 && !defending {
-// 				return true, -6000000
-// 			}
-// 			if defending && combinedValue < move.chessPiece.getValue() && !initialTurn && level == 1 {
-// 				return true, -6000000
-// 			}
-// 		}
-// 	}
+		if lastEaten != nil {
+			lastEatenValue := lastEaten.getValue()
+			combinedValue := lastEatenValue + piece.getValue()
+			if move.chessPiece.getValue() > lastEaten.getValue() && !initialTurn && level == 1 && !defending {
+				return true, -KingScore * 100
+			}
+			if defending && combinedValue < move.chessPiece.getValue() && !initialTurn && level == 1 {
+				return true, -KingScore * 100
+			}
+		}
+	}
 
-// 	return false, 0
-// }
+	return false, 0
+}
 
 func getIndividualMoveScore(piece IChessPiece, move Move, board [8][8]string, turn string) int {
 	//Moving to a location which defends, should be 0 and empty space should be -1
@@ -552,7 +547,7 @@ func isDefendingMove(turn string, board [8][8]string, decisionPiece IChessPiece,
 	var piecesProtecting []IChessPiece
 	value := -1
 	for piece, moves := range movesMappingOpponents {
-		for _, move := range moves {
+		for _, move := range moves { 
 			if copyPiece.canMove(move, board) && move.chessPiece != nil {
 				result = true
 				piecesDefendedAgainst = append(piecesDefendedAgainst, piece)

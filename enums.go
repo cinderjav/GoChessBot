@@ -28,7 +28,7 @@ const (
 	KnightScore     = 6
 	RookScore       = 10
 	QueenScore      = 20
-	KingScore       = 40
+	KingScore       = 100
 )
 
 var MaxRecursiveLevel = 3
