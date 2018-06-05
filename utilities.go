@@ -327,7 +327,24 @@ func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, le
 		return false, true
 	}
 
-	//prune any move that results in checkmate after I move
+	//does my move lead to a checkmate?
+	newb := makeBoardMove(piece, move, board)
+	next := getNextPlayerTurn(turn)
+	oppChess := ChessGame{newb, next}
+	oppopieces := oppChess.getPiecesForTurn()
+	newMovesMapping := getAllAvailableMovesForTurn(oppopieces, &oppChess)
+	for piecekey, movesvalue := range newMovesMapping {
+		for _, moveValue := range movesvalue {
+			postMoveInner := makeBoardMove(piecekey, moveValue, newb)
+			defendingInner := isEnemyDefendingMove(moveValue, next, postMoveInner)
+			if isCheckmateMove(piecekey, moveValue, next, newb, defendingInner, level) {
+				return true, false
+			}
+		}
+	}
+
+	//if king not checked eliminate ever sacrificing a piece that is not defensible
+	//handle with score, but I can prune the move here
 
 	if move.chessPiece != nil {
 		//think about if these conditions should be a score hit or a prune
@@ -365,6 +382,16 @@ func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, le
 	return false, false
 }
 
+// func pruneLowerScoreTurns(moveMapping map[IChessPiece][]Move) bool {
+// 	fmt.Println()
+// 	for _, moves := range moveMapping {
+// 		for _, move := range moves {
+// 			fmt.Println(move.score)
+// 		}
+// 	}
+// 	return true
+// }
+
 func pruneMap(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string, level int, originalTurn string, prevEaten IChessPiece) map[IChessPiece][]Move {
 	prunedMap := make(map[IChessPiece][]Move)
 	var pruneList []Move
@@ -384,7 +411,6 @@ func pruneMap(moveMapping map[IChessPiece][]Move, board [8][8]string, turn strin
 		}
 	}
 
-	//moveMapping = prunedMap
 	return prunedMap
 	// for _, badMove := range pruneMoves {
 	// 	delete(moveMapping, badPiece)
@@ -396,9 +422,9 @@ func analyzeMoves(moveMapping map[IChessPiece][]Move, chessGame *ChessGame, leve
 	prunedMap := pruneMap(moveMapping, chessGame.board, chessGame.playerTurn, level, originalTurn, prevEaten)
 	for piece, moves := range prunedMap {
 		for index, move := range moves {
-			score, averageScore, lenScore := analyzeMove(piece, move, chessGame.board, chessGame.playerTurn, level, score, originalTurn, prevEaten, avgScore, lenMoves)
+			scoreHere, averageScore, lenScore := analyzeMove(piece, move, chessGame.board, chessGame.playerTurn, level, score, originalTurn, prevEaten, avgScore, lenMoves)
 			moves := prunedMap[piece]
-			moves[index].score = score
+			moves[index].score = scoreHere
 			moves[index].avgScore = averageScore
 			moves[index].moveCount = lenScore
 			// go func(piece IChessPiece, move Move, board [8][8]string, turn string, level int, score int, originalTurn string, moveMapping map[IChessPiece][]Move) {
@@ -421,7 +447,7 @@ func analyzeMove(piece IChessPiece, move Move, board [8][8]string, turn string, 
 	if prune {
 		return score + (value * ((MaxRecursiveLevel + 1) - level)), 0, 0
 	}
-	scoreMove := getIndividualMoveScore(piece, move, board, turn)
+	scoreMove := getIndividualMoveScore(piece, move, board, turn, level)
 	if turn == originalTurn {
 		score += (scoreMove * ((MaxRecursiveLevel + 1) - level))
 	} else {
@@ -468,17 +494,17 @@ func shouldPrune(piece IChessPiece, move Move, board [8][8]string, initialTurn b
 		movePieceValue := move.chessPiece.getValue()
 		diffValue := movePieceValue - piece.getValue()
 		if (lastEaten == nil && !initialTurn && level == 1) && (!defending || diffValue > 0) {
-			return true, -KingScore * 100
+			return true, -KingScore * 10000
 		}
 
 		if lastEaten != nil {
 			lastEatenValue := lastEaten.getValue()
 			combinedValue := lastEatenValue + piece.getValue()
 			if move.chessPiece.getValue() > lastEaten.getValue() && !initialTurn && level == 1 && !defending {
-				return true, -KingScore * 100
+				return true, -KingScore * 1000
 			}
 			if defending && combinedValue < move.chessPiece.getValue() && !initialTurn && level == 1 {
-				return true, -KingScore * 100
+				return true, -KingScore * 1000
 			}
 		}
 	}
@@ -486,15 +512,20 @@ func shouldPrune(piece IChessPiece, move Move, board [8][8]string, initialTurn b
 	return false, 0
 }
 
-func getIndividualMoveScore(piece IChessPiece, move Move, board [8][8]string, turn string) int {
+func getIndividualMoveScore(piece IChessPiece, move Move, board [8][8]string, turn string, level int) int {
 	//Moving to a location which defends, should be 0 and empty space should be -1
 	//value moving to a cell that is defended should also be rewarded
 	//blocking pieces from getting killed with less valuable pieces that are defended
+	//should take into account
 	if move.chessPiece != nil {
 		return move.chessPiece.getValue()
 	}
 
+	//should take into account defending diff
 	defending, _, _, value := isDefendingMove(turn, board, piece, move, false)
+	if defending && piece.getValue() == KingScore {
+		return 0
+	}
 	if defending {
 		return value
 	}
@@ -547,12 +578,12 @@ func isDefendingMove(turn string, board [8][8]string, decisionPiece IChessPiece,
 	var piecesProtecting []IChessPiece
 	value := -1
 	for piece, moves := range movesMappingOpponents {
-		for _, move := range moves { 
-			if copyPiece.canMove(move, board) && move.chessPiece != nil {
+		for _, mov := range moves {
+			if copyPiece.canMove(mov, board) && mov.chessPiece != nil {
 				result = true
 				piecesDefendedAgainst = append(piecesDefendedAgainst, piece)
-				piecesProtecting = append(piecesProtecting, move.chessPiece)
-			} else if copyPiece.canMove(move, board) {
+				piecesProtecting = append(piecesProtecting, mov.chessPiece)
+			} else if copyPiece.canMove(mov, board) {
 				result = true
 			}
 		}
@@ -616,7 +647,6 @@ func getPieceString(x, y int, board [8][8]string) string {
 func translateMove(piece IChessPiece, move Move, board [8][8]string) string {
 	var pieceNotation string
 	var moveNotation string
-	fmt.Println(piece, move)
 	//send back algebraic and basic just in case
 	// pieceString := getPieceString(piece.xLocation(), piece.yLocation(), board)
 	// //moveString := getPieceString(move.x, move.y, board)
