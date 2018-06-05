@@ -308,14 +308,36 @@ func isCheckmateMove(piece IChessPiece, move Move, turn string, board [8][8]stri
 	return false
 }
 
+func isKingKilled(board [8][8]string, turn string) bool {
+	var king string
+	if turn == WhiteTurn {
+		king = "K"
+	} else {
+		king = "k"
+	}
+
+	for _, row := range board {
+		for _, col := range row {
+			if col == king {
+				return false
+			}
+		}
+	}
+	return true
+
+}
+
 func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, level int, initialTurn bool, lastEaten IChessPiece) (bool, bool) {
 	//change defending moves to simulate the move first
 	postMoveBoard := makeBoardMove(piece, move, board)
 	defending := isEnemyDefendingMove(move, turn, postMoveBoard)
+	//Remove any move that will cause King to die next turn
+	//should be handled in does my move lead to checkmate
 	pruneKingChecked := pruneMoveKingChecked(piece, turn, board, move, defending)
 	if pruneKingChecked {
 		return true, false
 	}
+	//dont kill a piece that is defended and lower value than you
 
 	if isCheckmateMove(piece, move, turn, board, defending, level) {
 		if level == 0 {
@@ -328,17 +350,24 @@ func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, le
 	}
 
 	//does my move lead to a checkmate?
-	newb := makeBoardMove(piece, move, board)
-	next := getNextPlayerTurn(turn)
-	oppChess := ChessGame{newb, next}
-	oppopieces := oppChess.getPiecesForTurn()
-	newMovesMapping := getAllAvailableMovesForTurn(oppopieces, &oppChess)
-	for piecekey, movesvalue := range newMovesMapping {
-		for _, moveValue := range movesvalue {
-			postMoveInner := makeBoardMove(piecekey, moveValue, newb)
-			defendingInner := isEnemyDefendingMove(moveValue, next, postMoveInner)
-			if isCheckmateMove(piecekey, moveValue, next, newb, defendingInner, level) {
-				return true, false
+	if level == 0 || level == 1 {
+		newb := makeBoardMove(piece, move, board)
+		next := getNextPlayerTurn(turn)
+		oppChess := ChessGame{newb, next}
+		oppopieces := oppChess.getPiecesForTurn()
+		newMovesMapping := getAllAvailableMovesForTurn(oppopieces, &oppChess)
+		for piecekey, movesvalue := range newMovesMapping {
+			for _, moveValue := range movesvalue {
+				postMoveInner := makeBoardMove(piecekey, moveValue, newb)
+				if isKingKilled(postMoveInner, turn) {
+					return true, false
+				}
+				//is king on board check for black here
+				//keep condition below also
+				defendingInner := isEnemyDefendingMove(moveValue, next, postMoveInner)
+				if isCheckmateMove(piecekey, moveValue, next, newb, defendingInner, level) {
+					return true, false
+				}
 			}
 		}
 	}
@@ -347,6 +376,9 @@ func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, le
 	//handle with score, but I can prune the move here
 
 	if move.chessPiece != nil {
+		if defending && piece.getValue() > move.chessPiece.getValue() {
+			return true, false
+		}
 		//think about if these conditions should be a score hit or a prune
 		//ideally would need to find a way to propagate up, score might be only way
 
@@ -364,17 +396,17 @@ func pruneMove(piece IChessPiece, move Move, board [8][8]string, turn string, le
 		movePieceValue := move.chessPiece.getValue()
 		diffValue := movePieceValue - piece.getValue()
 		if (lastEaten == nil && !initialTurn && level == 1) && (!defending || diffValue > 0) {
-			return false, false
+			return false, true
 		}
 
 		if lastEaten != nil {
 			lastEatenValue := lastEaten.getValue()
 			combinedValue := lastEatenValue + piece.getValue()
 			if move.chessPiece.getValue() > lastEaten.getValue() && !initialTurn && level == 1 && !defending {
-				return false, true
+				return false, false
 			}
 			if defending && combinedValue < move.chessPiece.getValue() && !initialTurn && level == 1 {
-				return false, true
+				return false, false
 			}
 		}
 	}
