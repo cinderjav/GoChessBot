@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 // func TestKingChecked(t *testing.T) {
 // 	fen := "1N1kB3/1pr5/3p1p2/P3N3/4R3/2p5/K6q/1n6 w - - 0 1"
@@ -32,7 +35,7 @@ import "testing"
 // 	}
 // }
 
-// func TestLongTime(t *testing.T){
+// func TestLongTime(t *testing.T) {
 // 	//rn1qkbnr/pbpppp1p/6p1/1p1P4/3Q2P1/8/PPP1PP1P/RNB1KBNR b KQkq - 1 4
 // 	println("here")
 // 	fen := "rn1qkbnr/pbpppp1p/6p1/1p1P4/3Q2P1/8/PPP1PP1P/RNB1KBNR b KQkq - 1 4"
@@ -44,13 +47,23 @@ import "testing"
 // 	}
 // }
 
-//rn1qkb1Q/p1pppp1p/6p1/1p6/6P1/8/PPP1P2P/RNB1K1NR b KQq - 0 9
-func TestInvalidMoveFixed(t *testing.T) {
-	fen := "rn1qkb1Q/p1pppp1p/6p1/1p6/6P1/8/PPP1P2P/RNB1K1NR b KQq - 0 9"
+// //rn1qkb1Q/p1pppp1p/6p1/1p6/6P1/8/PPP1P2P/RNB1K1NR b KQq - 0 9
+// func TestInvalidMoveFixed(t *testing.T) {
+// 	fen := "rn1qkb1Q/p1pppp1p/6p1/1p6/6P1/8/PPP1P2P/RNB1K1NR b KQq - 0 9"
+// 	fenObject := FenRequest{fen}
+// 	v := Run(fenObject)
+// 	println(v)
+// 	if v == "f8-g7" {
+// 		t.Error("Expected another move, that does not result in checkmate, got ", v)
+// 	}
+// }
+//8/2p4r/1kp4p/p3R3/2P1PN2/K1N3P1/8/8 w - - 393 261
+func TestInvalidMoveFixedV3Score(t *testing.T) {
+	fen := "BB5Q/5k2/b7/p7/1p2R1P1/1PP2N2/P4P1P/2b1K2R w K - 3 24"
 	fenObject := FenRequest{fen}
-	v := Run(fenObject)
+	v, move := RunV3(fenObject)
 	println(v)
-	if v == "f8-g7" {
-		t.Error("Expected another move, that does not result in checkmate, got ", v)
-	}
+	fmt.Println(move)
+	println(kingKills)
+	println(count)
 }

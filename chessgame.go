@@ -43,6 +43,14 @@ func (chessGame *ChessGame) getWhitePieces() []IChessPiece {
 	return whitePieces
 }
 
+func (chessGame *ChessGame) getBoardValueForPieces(pieces []IChessPiece) int {
+	var totalScore = 0
+	for _, piece := range pieces {
+		totalScore += piece.getValue()
+	}
+	return totalScore
+}
+
 func (chessGame *ChessGame) getBlackPieces() []IChessPiece {
 	var blackPieces []IChessPiece
 	for i := 0; i < len(chessGame.board); i++ {
@@ -103,6 +111,19 @@ func (chessGame *ChessGame) executeMove() string {
 	_, piece, move, _, _ := getHighestMoveScoreFromMap(prunedMap)
 	moveTranslation := translateMove(piece, move, chessGame.board)
 	fmt.Println(prunedMap)
+	return moveTranslation
+}
+
+func (chessGame *ChessGame) executeMoveMinMax() string {
+	pieces := chessGame.getPiecesForTurn()
+	// if len(pieces) < 9 {
+	// 	MaxRecursiveLevel = MaxRecursiveLevel + 1
+	// }
+	println(MaxRecursiveLevel)
+	movesMapping := getAllAvailableMovesForTurn(pieces, chessGame)
+	_, move, piece := minMax(movesMapping, chessGame.board, chessGame.playerTurn, MaxRecursiveLevel, chessGame.playerTurn, Move{}, Pawn{})
+	moveTranslation := translateMove(piece, move, chessGame.board)
+	fmt.Println(moveTranslation)
 	return moveTranslation
 }
 

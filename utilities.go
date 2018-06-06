@@ -21,14 +21,6 @@ func getAllAvailableMovesForTurn(pieces []IChessPiece, chessGame *ChessGame) map
 	return pieceMoves
 }
 
-func calculateBestMoveForPiece(piece IChessPiece, chessGame *ChessGame) Move {
-	return Move{}
-}
-
-func calculateBestMoveForTurn(moves []Move) Move {
-	return Move{}
-}
-
 func isWhitePiece(piece string) bool {
 	if piece == EmptySpace {
 		return false
