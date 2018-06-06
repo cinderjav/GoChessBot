@@ -43,7 +43,11 @@ func handlePlayv3(w http.ResponseWriter, req *http.Request) {
 
 	fmt.Println(fenObject)
 	move := RunV3(fenObject)
-	w.Write([]byte(move))
+
+	moveResponse := MoveResponse{move}
+	movejson, err := json.Marshal(moveResponse)
+	//w.Write([]byte(move))
+	w.Write(movejson)
 	// fmt.Println(move)
 	// moveJson, err := json.Marshal(move)
 	// if err != nil {
@@ -70,4 +74,8 @@ func RunV3(fenObject FenRequest) string {
 
 type FenRequest struct {
 	Fen string
+}
+
+type MoveResponse struct {
+	Move string
 }
