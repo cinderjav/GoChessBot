@@ -628,8 +628,19 @@ func isDefendingMove(turn string, board [8][8]string, decisionPiece IChessPiece,
 
 func makeBoardMove(piece IChessPiece, move Move, board [8][8]string) [8][8]string {
 	pieceString := board[piece.xLocation()][piece.yLocation()]
+	var queenPromotion string
+	if pieceString == BlackPawn && move.x == 7 {
+		queenPromotion = BlackQueen
+	} else if pieceString == WhitePawn && move.x == 0 {
+		queenPromotion = WhiteQueen
+	}
 	board[piece.xLocation()][piece.yLocation()] = ""
-	board[move.x][move.y] = pieceString
+	if queenPromotion == WhiteQueen || queenPromotion == BlackQueen {
+		board[move.x][move.y] = queenPromotion
+	} else {
+		board[move.x][move.y] = pieceString
+	}
+
 	return board
 }
 
@@ -759,6 +770,17 @@ func translateMove(piece IChessPiece, move Move, board [8][8]string) string {
 	// if move.chessPiece != nil {
 	// 	sep = "x"
 	// }
+	var queenPromotion string
+	pieceString := board[piece.xLocation()][piece.yLocation()]
+	if pieceString == BlackPawn && move.x == 7 {
+		queenPromotion = BlackQueen
+	} else if pieceString == WhitePawn && move.x == 0 {
+		queenPromotion = WhiteQueen
+	}
+
+	if queenPromotion == WhiteQueen || queenPromotion == BlackQueen {
+		return pieceNotation + sep + moveNotation + "/" + queenPromotion
+	}
 	return pieceNotation + sep + moveNotation
 
 }

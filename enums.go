@@ -23,11 +23,11 @@ const (
 
 const (
 	EmptySpaceScore = 0
-	PawnScore       = 3
-	BishopScore     = 6
-	KnightScore     = 6
-	RookScore       = 10
-	QueenScore      = 20
+	PawnScore       = 1
+	BishopScore     = 3
+	KnightScore     = 3
+	RookScore       = 5
+	QueenScore      = 9
 	KingScore       = 100
 )
 

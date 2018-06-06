@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-//Need to handle pessant scenario and castling
+//Need to handle pessant scenario and castling and promotions
 
 type IChessPiece interface {
 	canMove(move Move, board [8][8]string) bool

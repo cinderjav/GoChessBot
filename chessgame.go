@@ -97,6 +97,46 @@ func (chessGame *ChessGame) getScore() map[string]int {
 	return scoreMap
 }
 
+func (chessGame *ChessGame) getQueens(pieces []IChessPiece) []IChessPiece {
+	var queenPieces []IChessPiece
+	for _, piece := range pieces {
+		if piece.getValue() == QueenScore {
+			queenPieces = append(queenPieces, piece)
+		}
+	}
+	return queenPieces
+}
+
+func (chessGame *ChessGame) getRooks(pieces []IChessPiece) []IChessPiece {
+	var rookPieces []IChessPiece
+	for _, piece := range pieces {
+		if piece.getValue() == RookScore {
+			rookPieces = append(rookPieces, piece)
+		}
+	}
+	return rookPieces
+}
+
+func (chessGame *ChessGame) getBishops(pieces []IChessPiece) []IChessPiece {
+	var bishopPieces []IChessPiece
+	for _, piece := range pieces {
+		if piece.getValue() == BishopScore {
+			bishopPieces = append(bishopPieces, piece)
+		}
+	}
+	return bishopPieces
+}
+
+func (chessGame *ChessGame) getKnights(pieces []IChessPiece) []IChessPiece {
+	var knightPieces []IChessPiece
+	for _, piece := range pieces {
+		if piece.getValue() == KnightScore {
+			knightPieces = append(knightPieces, piece)
+		}
+	}
+	return knightPieces
+}
+
 func (chessGame *ChessGame) executeMove() string {
 	pieces := chessGame.getPiecesForTurn()
 	// if len(pieces) < 9 {

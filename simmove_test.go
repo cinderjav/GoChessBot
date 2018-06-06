@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -59,11 +58,12 @@ import (
 // }
 //8/2p4r/1kp4p/p3R3/2P1PN2/K1N3P1/8/8 w - - 393 261
 func TestInvalidMoveFixedV3Score(t *testing.T) {
-	fen := "BB5Q/5k2/b7/p7/1p2R1P1/1PP2N2/P4P1P/2b1K2R w K - 3 24"
+	fen := "r3k3/2p5/pp6/5K2/2p5/NP3P2/7p/6q1 b - - 1 5"
 	fenObject := FenRequest{fen}
-	v, move := RunV3(fenObject)
-	println(v)
-	fmt.Println(move)
-	println(kingKills)
-	println(count)
+	v := RunV3(fenObject)
+	if v != "h2-h1/q" {
+		t.Error("Expected another move, that results in a promotion to queen, got ", v)
+	}
 }
+
+//"r3k3/2p5/pp6/5K2/2p5/NP3P2/7p/6q1 b - - 1 5"

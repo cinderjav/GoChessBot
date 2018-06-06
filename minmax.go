@@ -14,15 +14,6 @@ func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string,
 		return score, parentMove, parentPiece
 	}
 
-	// if isKingKilled(board, turn) {
-	// 	kingKills += 1
-	// 	if turn == initialTurn {
-	// 		return -10000
-	// 	} else {
-	// 		return 10000
-	// 	}
-	// }
-
 	prunedMap := pruneMinMax(moveMapping, board, turn)
 	if turn == initialTurn {
 		var bestResult = -1000000000
@@ -68,16 +59,36 @@ var count = 0
 
 func analyzeBoard(board [8][8]string, turn string, initialTurn string) int {
 	count += 1
+	//Give Greater Value to same score diff but less pieces on board vs more pieces on the board
+	//Take into Account pawn progression on board, pieces defended
+	//Whether King in check or not
+	//If Any pieces defended vs not defended?
+	//stacked pawns are bad
+	//more available moves in comparison to other side is better
+	//look to add concurrency to increase depth
 	//always analyze current turn here
-	analysisGame := ChessGame{board, turn}
-	whitePieces := analysisGame.getWhitePieces()
-	blackPieces := analysisGame.getBlackPieces()
-	whiteValue := analysisGame.getBoardValueForPieces(whitePieces)
-	blackValue := analysisGame.getBoardValueForPieces(blackPieces)
-	if initialTurn == WhiteTurn {
-		return whiteValue - blackValue
+	friendlyGame := ChessGame{board, turn}
+	enemyTurn := getNextPlayerTurn(turn)
+	enemyGame := ChessGame{board, enemyTurn}
+	friendlyPieces := friendlyGame.getPiecesForTurn()
+	enemyPieces := enemyGame.getPiecesForTurn()
+
+	friendlyValue := friendlyGame.getBoardValueForPieces(friendlyPieces)
+	enemyValue := enemyGame.getBoardValueForPieces(enemyPieces)
+
+	friendMoves := getAllAvailableMovesForTurn(friendlyPieces, &friendlyGame)
+	enemyMoves := getAllAvailableMovesForTurn(enemyPieces, &enemyGame)
+
+	return friendlyValue - enemyValue + availableMoveScore(len(friendMoves), len(enemyMoves))
+}
+
+func availableMoveScore(friendlen, enemylen int) int {
+	if friendlen > enemylen {
+		return 1
+	} else if enemylen > friendlen {
+		return -1
 	} else {
-		return blackValue - whiteValue
+		return 0
 	}
 }
 
@@ -126,7 +137,6 @@ func pruneMoveMinMax(piece IChessPiece, move Move, board [8][8]string, turn stri
 	if pruneKingChecked {
 		return true, false
 	}
-	//dont kill a piece that is defended and lower value than you
 
 	if isCheckmateMove(piece, move, turn, board, defending, -1) {
 
@@ -134,6 +144,7 @@ func pruneMoveMinMax(piece IChessPiece, move Move, board [8][8]string, turn stri
 		//idea is to limit score for this path, should result in much lower score propagated up to original move
 		return false, true
 	}
+	//dont kill a piece that is defended and lower value than you
 
 	//does my move lead to a checkmate?
 	newb := makeBoardMove(piece, move, board)
@@ -155,6 +166,27 @@ func pruneMoveMinMax(piece IChessPiece, move Move, board [8][8]string, turn stri
 			}
 		}
 	}
+
+	//Moving piece will not lead to invalid or checkmate under this comment, and I do not have a checkmate available
+
+	// if piece.getValue() == PawnScore && !defending && (move.x == 0 || move.x == 7) {
+	// 	return false, true
+	// }
+
+	if move.chessPiece != nil {
+		if move.chessPiece.getValue() == QueenScore && !defending {
+			return false, true
+		}
+		if move.chessPiece.getValue() < piece.getValue() && defending {
+			return true, false
+		}
+		if move.chessPiece.getValue() > piece.getValue() {
+			return false, true
+		}
+
+		//Moving to defended location would be bad if my side is not defending, do this
+	}
+	//do I want to choose this over everything, even killing enemy queen?
 
 	return false, false
 }
