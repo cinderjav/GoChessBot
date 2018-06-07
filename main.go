@@ -42,9 +42,9 @@ func handlePlayv3(w http.ResponseWriter, req *http.Request) {
 	}
 
 	fmt.Println(fenObject)
-	move := RunV3(fenObject)
+	move, score := RunV3(fenObject)
 
-	moveResponse := MoveResponse{move}
+	moveResponse := MoveResponse{move, score}
 	movejson, err := json.Marshal(moveResponse)
 	//w.Write([]byte(move))
 	w.Write(movejson)
@@ -65,11 +65,11 @@ func Run(fenObject FenRequest) string {
 	return executedMove
 }
 
-func RunV3(fenObject FenRequest) string {
+func RunV3(fenObject FenRequest) (string, int) {
 	board, turn := fenParser(fenObject.Fen)
 	chessGame := getChessGame(board, turn)
-	executedMove := chessGame.executeMoveMinMax()
-	return executedMove
+	executedMove, score := chessGame.executeMoveMinMax()
+	return executedMove, score
 }
 
 type FenRequest struct {
@@ -77,5 +77,6 @@ type FenRequest struct {
 }
 
 type MoveResponse struct {
-	Move string
+	Move  string
+	Score int
 }

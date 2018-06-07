@@ -154,17 +154,17 @@ func (chessGame *ChessGame) executeMove() string {
 	return moveTranslation
 }
 
-func (chessGame *ChessGame) executeMoveMinMax() string {
+func (chessGame *ChessGame) executeMoveMinMax() (string, int) {
 	pieces := chessGame.getPiecesForTurn()
 	// if len(pieces) < 9 {
 	// 	MaxRecursiveLevel = MaxRecursiveLevel + 1
 	// }
 	println(MaxRecursiveLevel)
 	movesMapping := getAllAvailableMovesForTurn(pieces, chessGame)
-	_, move, pieceMove := minMax(movesMapping, chessGame.board, chessGame.playerTurn, MaxRecursiveLevel, chessGame.playerTurn, Move{}, Pawn{})
+	score, move, pieceMove := minMax(movesMapping, chessGame.board, chessGame.playerTurn, MaxRecursiveLevel, chessGame.playerTurn, Move{}, Pawn{})
 	moveTranslation := translateMove(pieceMove, move, chessGame.board)
 	fmt.Println(moveTranslation)
-	return moveTranslation
+	return moveTranslation, score
 }
 
 func (chessGame *ChessGame) getPiecesForTurn() []IChessPiece {

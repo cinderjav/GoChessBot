@@ -31,4 +31,4 @@ const (
 	KingScore       = 100
 )
 
-var MaxRecursiveLevel = 3
+var MaxRecursiveLevel = 4

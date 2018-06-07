@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type PieceMove struct {
 	move  Move
 	piece IChessPiece
@@ -10,14 +12,13 @@ var kingKills = 0
 
 func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string, level int, initialTurn string, parentMove Move, parentPiece IChessPiece) (int, Move, IChessPiece) {
 	if isKingKilled(board, turn) {
-		println("king dead")
 		if turn == initialTurn {
-			return -10000 * level, parentMove, parentPiece
+			return -10000 * (level + 1), parentMove, parentPiece
 		}
-		return 10000 * level, parentMove, parentPiece
+		return 10000 * (level + 1), parentMove, parentPiece
 	}
 
-	if level < 0 {
+	if level == 0 {
 		score := analyzeBoard(board, turn, initialTurn)
 		return score, parentMove, parentPiece
 	}
@@ -32,9 +33,9 @@ func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string,
 		for piece, moves := range prunedMap {
 			for _, move := range moves {
 				resultMax, _, _ := makeMoveAndGenerate(move, piece, turn, board, level-1, initialTurn)
-				// if level == MaxRecursiveLevel {
-				// 	fmt.Println(resultMax, move, piece)
-				// }
+				if level == MaxRecursiveLevel {
+					fmt.Println(resultMax, move, piece)
+				}
 				bestResult, maxMove, maxPiece = max(bestResult, resultMax, maxMove, move, maxPiece, piece)
 			}
 		}
@@ -57,6 +58,12 @@ func max(currentmax, newValue int, currentMove, move Move, currentPiece, piece I
 	if newValue > currentmax {
 		return newValue, move, piece
 	}
+
+	if currentPiece == nil {
+		currentPiece = piece
+		currentMove = move
+	}
+
 	return currentmax, currentMove, currentPiece
 }
 
@@ -64,6 +71,12 @@ func min(currentmin, newValue int, currentMove, move Move, currentPiece, piece I
 	if newValue < currentmin {
 		return newValue, move, piece
 	}
+
+	if currentPiece == nil {
+		currentPiece = piece
+		currentMove = move
+	}
+
 	return currentmin, currentMove, currentPiece
 }
 
@@ -111,6 +124,12 @@ func availableMoveScore(friendlen, enemylen map[IChessPiece][]Move) int {
 	}
 	for piecesen, _ := range enemylen {
 		enemyCount += len(enemylen[piecesen])
+	}
+	if friendCount == 0 {
+		return -10000
+	}
+	if enemyCount == 0 {
+		return 10000
 	}
 	diff := friendCount - enemyCount
 	return diff / 2
