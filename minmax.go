@@ -9,7 +9,7 @@ type PieceMove struct {
 var kingKills = 0
 
 func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string, level int, initialTurn string, parentMove Move, parentPiece IChessPiece) (int, Move, IChessPiece) {
-	if level == 0 {
+	if level < 0 {
 		score := analyzeBoard(board, turn, initialTurn)
 		return score, parentMove, parentPiece
 	}
@@ -23,6 +23,9 @@ func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string,
 		for piece, moves := range prunedMap {
 			for _, move := range moves {
 				resultMax, _, _ := makeMoveAndGenerate(move, piece, turn, board, level-1, initialTurn)
+				// if level == MaxRecursiveLevel {
+				// 	fmt.Println(resultMax, move, piece)
+				// }
 				bestResult, maxMove, maxPiece = max(bestResult, resultMax, maxMove, move, maxPiece, piece)
 			}
 		}
@@ -67,8 +70,9 @@ func analyzeBoard(board [8][8]string, turn string, initialTurn string) int {
 	//more available moves in comparison to other side is better
 	//look to add concurrency to increase depth
 	//always analyze current turn here
-	friendlyGame := ChessGame{board, turn}
-	enemyTurn := getNextPlayerTurn(turn)
+
+	friendlyGame := ChessGame{board, initialTurn}
+	enemyTurn := getNextPlayerTurn(initialTurn)
 	enemyGame := ChessGame{board, enemyTurn}
 	friendlyPieces := friendlyGame.getPiecesForTurn()
 	enemyPieces := enemyGame.getPiecesForTurn()
@@ -79,17 +83,28 @@ func analyzeBoard(board [8][8]string, turn string, initialTurn string) int {
 	friendMoves := getAllAvailableMovesForTurn(friendlyPieces, &friendlyGame)
 	enemyMoves := getAllAvailableMovesForTurn(enemyPieces, &enemyGame)
 
-	return friendlyValue - enemyValue + availableMoveScore(len(friendMoves), len(enemyMoves))
+	return friendlyValue - enemyValue + availableMoveScore(friendMoves, enemyMoves)
 }
 
-func availableMoveScore(friendlen, enemylen int) int {
-	if friendlen > enemylen {
-		return 1
-	} else if enemylen > friendlen {
-		return -1
-	} else {
-		return 0
+func availableMoveScore(friendlen, enemylen map[IChessPiece][]Move) int {
+	var friendCount int
+	var enemyCount int
+	//  postMoveBoard := makeBoardMove(piece, move, board)
+	// defending := isEnemyDefendingMove(move, turn, postMoveBoard)
+	//  //Remove any move that will cause King to die next turn
+	//  //should be handled in does my move lead to checkmate
+	//  pruneKingChecked := pruneMoveKingChecked(piece, turn, board, move, defending)
+	// if pruneKingChecked {
+	// 	return true, false
+	// }
+	for piecesfr, _ := range friendlen {
+		friendCount += len(friendlen[piecesfr])
 	}
+	for piecesen, _ := range enemylen {
+		enemyCount += len(enemylen[piecesen])
+	}
+	diff := friendCount - enemyCount
+	return diff / 2
 }
 
 func makeMoveAndGenerate(move Move, piece IChessPiece, turn string, board [8][8]string, level int, initialTurn string) (int, Move, IChessPiece) {
@@ -160,18 +175,18 @@ func pruneMoveMinMax(piece IChessPiece, move Move, board [8][8]string, turn stri
 			}
 			//is king on board check for black here
 			//keep condition below also
-			defendingInner := isEnemyDefendingMove(moveValue, next, postMoveInner)
-			if isCheckmateMove(piecekey, moveValue, next, newb, defendingInner, -1) {
-				return true, false
-			}
+			// defendingInner := isEnemyDefendingMove(moveValue, next, postMoveInner)
+			// if isCheckmateMove(piecekey, moveValue, next, newb, defendingInner, -1) {
+			// 	return true, false
+			// }
 		}
 	}
 
 	//Moving piece will not lead to invalid or checkmate under this comment, and I do not have a checkmate available
 
-	// if piece.getValue() == PawnScore && !defending && (move.x == 0 || move.x == 7) {
-	// 	return false, true
-	// }
+	if piece.getValue() == PawnScore && !defending && (move.x == 0 || move.x == 7) {
+		return false, true
+	}
 
 	if move.chessPiece != nil {
 		if move.chessPiece.getValue() == QueenScore && !defending {

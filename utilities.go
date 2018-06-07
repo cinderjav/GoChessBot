@@ -689,6 +689,7 @@ func translateMove(piece IChessPiece, move Move, board [8][8]string) string {
 	// 	pieceString = ""
 	// }
 	//pieceNotation += strings.ToUpper(pieceString)
+	fmt.Println("HERE", piece, move)
 	switch piece.yLocation() {
 	case 0:
 		pieceNotation += "a"

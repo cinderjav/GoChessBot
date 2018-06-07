@@ -161,8 +161,8 @@ func (chessGame *ChessGame) executeMoveMinMax() string {
 	// }
 	println(MaxRecursiveLevel)
 	movesMapping := getAllAvailableMovesForTurn(pieces, chessGame)
-	_, move, piece := minMax(movesMapping, chessGame.board, chessGame.playerTurn, MaxRecursiveLevel, chessGame.playerTurn, Move{}, Pawn{})
-	moveTranslation := translateMove(piece, move, chessGame.board)
+	_, move, pieceMove := minMax(movesMapping, chessGame.board, chessGame.playerTurn, MaxRecursiveLevel, chessGame.playerTurn, Move{}, Pawn{})
+	moveTranslation := translateMove(pieceMove, move, chessGame.board)
 	fmt.Println(moveTranslation)
 	return moveTranslation
 }
