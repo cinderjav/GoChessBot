@@ -46,7 +46,7 @@ func TestLongTime(t *testing.T) {
 	}
 }
 
-// //rn1qkb1Q/p1pppp1p/6p1/1p6/6P1/8/PPP1P2P/RNB1K1NR b KQq - 0 9
+//rn1qkb1Q/p1pppp1p/6p1/1p6/6P1/8/PPP1P2P/RNB1K1NR b KQq - 0 9
 func TestInvalidMoveFixed(t *testing.T) {
 	fen := "rn1qkb1Q/p1pppp1p/6p1/1p6/6P1/8/PPP1P2P/RNB1K1NR b KQq - 0 9"
 	fenObject := FenRequest{fen}

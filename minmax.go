@@ -9,12 +9,21 @@ type PieceMove struct {
 var kingKills = 0
 
 func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string, level int, initialTurn string, parentMove Move, parentPiece IChessPiece) (int, Move, IChessPiece) {
+	if isKingKilled(board, turn) {
+		println("king dead")
+		if turn == initialTurn {
+			return -10000 * level, parentMove, parentPiece
+		}
+		return 10000 * level, parentMove, parentPiece
+	}
+
 	if level < 0 {
 		score := analyzeBoard(board, turn, initialTurn)
 		return score, parentMove, parentPiece
 	}
 
 	prunedMap := pruneMinMax(moveMapping, board, turn)
+
 	if turn == initialTurn {
 		var bestResult = -1000000000
 		var maxMove Move
@@ -162,25 +171,25 @@ func pruneMoveMinMax(piece IChessPiece, move Move, board [8][8]string, turn stri
 	//dont kill a piece that is defended and lower value than you
 
 	//does my move lead to a checkmate?
-	newb := makeBoardMove(piece, move, board)
-	next := getNextPlayerTurn(turn)
-	oppChess := ChessGame{newb, next}
-	oppopieces := oppChess.getPiecesForTurn()
-	newMovesMapping := getAllAvailableMovesForTurn(oppopieces, &oppChess)
-	for piecekey, movesvalue := range newMovesMapping {
-		for _, moveValue := range movesvalue {
-			postMoveInner := makeBoardMove(piecekey, moveValue, newb)
-			if isKingKilled(postMoveInner, turn) {
-				return true, false
-			}
-			//is king on board check for black here
-			//keep condition below also
-			// defendingInner := isEnemyDefendingMove(moveValue, next, postMoveInner)
-			// if isCheckmateMove(piecekey, moveValue, next, newb, defendingInner, -1) {
-			// 	return true, false
-			// }
-		}
-	}
+	// newb := makeBoardMove(piece, move, board)
+	// next := getNextPlayerTurn(turn)
+	// oppChess := ChessGame{newb, next}
+	// oppopieces := oppChess.getPiecesForTurn()
+	// newMovesMapping := getAllAvailableMovesForTurn(oppopieces, &oppChess)
+	// for piecekey, movesvalue := range newMovesMapping {
+	// 	for _, moveValue := range movesvalue {
+	// 		postMoveInner := makeBoardMove(piecekey, moveValue, newb)
+	// 		if isKingKilled(postMoveInner, turn) {
+	// 			return true, false
+	// 		}
+	// 		//is king on board check for black here
+	// 		//keep condition below also
+	// 		// defendingInner := isEnemyDefendingMove(moveValue, next, postMoveInner)
+	// 		// if isCheckmateMove(piecekey, moveValue, next, newb, defendingInner, -1) {
+	// 		// 	return true, false
+	// 		// }
+	// 	}
+	// }
 
 	//Moving piece will not lead to invalid or checkmate under this comment, and I do not have a checkmate available
 
