@@ -10,7 +10,7 @@ type PieceMove struct {
 
 var kingKills = 0
 
-func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string, level int, initialTurn string, parentMove Move, parentPiece IChessPiece) (int, Move, IChessPiece) {
+func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string, level int, initialTurn string, parentMove Move, parentPiece IChessPiece, alpha, beta int) (int, Move, IChessPiece) {
 	if isKingKilled(board, turn) {
 		if turn == initialTurn {
 			return -10000 * (level + 1), parentMove, parentPiece
@@ -26,31 +26,47 @@ func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string,
 	prunedMap := pruneMinMax(moveMapping, board, turn)
 
 	if turn == initialTurn {
-		var bestResult = -1000000000
 		var maxMove Move
 		var maxPiece IChessPiece
 		//var bestMoveChoice Move
+		var breakOuter bool
 		for piece, moves := range prunedMap {
 			for _, move := range moves {
-				resultMax, _, _ := makeMoveAndGenerate(move, piece, turn, board, level-1, initialTurn)
+				resultMax, _, _ := makeMoveAndGenerate(move, piece, turn, board, level-1, initialTurn, alpha, beta)
 				if level == MaxRecursiveLevel {
 					fmt.Println(resultMax, move, piece)
 				}
-				bestResult, maxMove, maxPiece = max(bestResult, resultMax, maxMove, move, maxPiece, piece)
+				if alpha < beta {
+					alpha, maxMove, maxPiece = max(alpha, resultMax, maxMove, move, maxPiece, piece)
+				} else {
+					breakOuter = true
+					break
+				}
+			}
+			if breakOuter {
+				break
 			}
 		}
-		return bestResult, maxMove, maxPiece
+		return alpha, maxMove, maxPiece
 	} else {
-		var worstResult = 1000000000
 		var minMove Move
 		var minPiece IChessPiece
+		var breakmin bool
 		for piece, moves := range prunedMap {
 			for _, move := range moves {
-				resultMin, _, _ := makeMoveAndGenerate(move, piece, turn, board, level-1, initialTurn)
-				worstResult, minMove, minPiece = min(worstResult, resultMin, minMove, move, minPiece, piece)
+				resultMin, _, _ := makeMoveAndGenerate(move, piece, turn, board, level-1, initialTurn, alpha, beta)
+				if beta > alpha {
+					beta, minMove, minPiece = min(beta, resultMin, minMove, move, minPiece, piece)
+				} else {
+					breakmin = true
+					break
+				}
+			}
+			if breakmin {
+				break
 			}
 		}
-		return worstResult, minMove, minPiece
+		return beta, minMove, minPiece
 	}
 }
 
@@ -132,16 +148,16 @@ func availableMoveScore(friendlen, enemylen map[IChessPiece][]Move) int {
 		return 10000
 	}
 	diff := friendCount - enemyCount
-	return diff / 2
+	return diff / 4
 }
 
-func makeMoveAndGenerate(move Move, piece IChessPiece, turn string, board [8][8]string, level int, initialTurn string) (int, Move, IChessPiece) {
+func makeMoveAndGenerate(move Move, piece IChessPiece, turn string, board [8][8]string, level int, initialTurn string, alpha, beta int) (int, Move, IChessPiece) {
 	newBoard := makeBoardMove(piece, move, board)
 	newTurn := getNextPlayerTurn(turn)
 	newChessGame := ChessGame{newBoard, newTurn}
 	pieces := newChessGame.getPiecesForTurn()
 	newMapping := getAllAvailableMovesForTurn(pieces, &newChessGame)
-	return minMax(newMapping, newBoard, newTurn, level, initialTurn, move, piece)
+	return minMax(newMapping, newBoard, newTurn, level, initialTurn, move, piece, alpha, beta)
 }
 
 func pruneMinMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string) map[IChessPiece][]Move {
@@ -223,9 +239,9 @@ func pruneMoveMinMax(piece IChessPiece, move Move, board [8][8]string, turn stri
 		if move.chessPiece.getValue() < piece.getValue() && defending {
 			return true, false
 		}
-		if move.chessPiece.getValue() > piece.getValue() {
-			return false, true
-		}
+		// if move.chessPiece.getValue() > piece.getValue() {
+		// 	return false, true
+		// }
 
 		//Moving to defended location would be bad if my side is not defending, do this
 	}

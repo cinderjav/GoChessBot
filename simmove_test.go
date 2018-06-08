@@ -32,17 +32,17 @@ import "testing"
 // 	}
 // }
 
-// func TestLongTime(t *testing.T) {
-// 	//rn1qkbnr/pbpppp1p/6p1/1p1P4/3Q2P1/8/PPP1PP1P/RNB1KBNR b KQkq - 1 4
-// 	println("here")
-// 	fen := "rn1qkbnr/pbpppp1p/6p1/1p1P4/3Q2P1/8/PPP1PP1P/RNB1KBNR b KQkq - 1 4"
-// 	fenObject := FenRequest{fen}
-// 	v := RunV3(fenObject)
-// 	println(v)
-// 	if v != "e7-e5" {
-// 		t.Error("Expected g8-f6, got ", v)
-// 	}
-// }
+func TestLongTime(t *testing.T) {
+	//rn1qkbnr/pbpppp1p/6p1/1p1P4/3Q2P1/8/PPP1PP1P/RNB1KBNR b KQkq - 1 4
+	println("here")
+	fen := "rn1qkbnr/pbpppp1p/6p1/1p1P4/3Q2P1/8/PPP1PP1P/RNB1KBNR b KQkq - 1 4"
+	fenObject := FenRequest{fen}
+	v, _ := RunV3(fenObject)
+	println(v)
+	if v == "g8-f6" {
+		t.Error("Expected g8-f6, got ", v)
+	}
+}
 
 // //rn1qkb1Q/p1pppp1p/6p1/1p6/6P1/8/PPP1P2P/RNB1K1NR b KQq - 0 9
 // func TestInvalidMoveFixed(t *testing.T) {
@@ -74,14 +74,14 @@ import "testing"
 // 	}
 // }
 
-func TestBishopSuicide(t *testing.T) {
-	fen := "rnbqkbnr/pppp1ppp/4p3/7Q/8/4P3/PPPP1PPP/RNB1KBNR b KQkq - 1 2"
-	fenObject := FenRequest{fen}
-	v, _ := RunV3(fenObject)
-	if v == "f8-a3" {
-		t.Error("Expected another move, that results in a promotion to queen, got ", v)
-	}
-}
+// func TestBishopSuicide(t *testing.T) {
+// 	fen := "rnbqkbnr/pppp1ppp/4p3/7Q/8/4P3/PPPP1PPP/RNB1KBNR b KQkq - 1 2"
+// 	fenObject := FenRequest{fen}
+// 	v, _ := RunV3(fenObject)
+// 	if v == "f8-a3" {
+// 		t.Error("Expected another move, that results in a promotion to queen, got ", v)
+// 	}
+// }
 
 // func TestNilReference(t *testing.T) {
 // 	fen := "4k3/p2p1p2/3Bp3/6Qp/1p3P2/4PP2/P1PP1K2/7R b - - 3 26"
@@ -89,6 +89,16 @@ func TestBishopSuicide(t *testing.T) {
 // 	v, _ := RunV3(fenObject)
 // 	//println(v)
 // 	if v == "stalemate" {
+// 		t.Error("Expected another move, not stalemate ", v)
+// 	}
+// }
+
+// func TestGoodKnightMoveReference(t *testing.T) {
+// 	fen := "rnb1kb1r/pppp1pp1/B3q3/3Np2p/4n3/4P3/PPPP1PPP/R1B1K1NR w KQkq - 0 7"
+// 	fenObject := FenRequest{fen}
+// 	v, _ := RunV3(fenObject)
+// 	//println(v)
+// 	if v == "d5-c7" {
 // 		t.Error("Expected another move, not stalemate ", v)
 // 	}
 // }
