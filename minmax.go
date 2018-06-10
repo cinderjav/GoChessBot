@@ -10,7 +10,8 @@ type PieceMove struct {
 
 var kingKills = 0
 
-func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string, level int, initialTurn string, parentMove Move, parentPiece IChessPiece, alpha, beta int) (int, Move, IChessPiece) {
+func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string, level int, initialTurn string, parentMove Move, parentPiece IChessPiece, alpha, beta, initialScore, initialPiecesCount int) (int, Move, IChessPiece) {
+
 	if isKingKilled(board, turn) {
 		if turn == initialTurn {
 			return -10000 * (level + 1), parentMove, parentPiece
@@ -19,7 +20,7 @@ func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string,
 	}
 
 	if level == 0 {
-		score := analyzeBoard(board, turn, initialTurn)
+		score := analyzeBoard(board, turn, initialTurn, initialScore, initialPiecesCount)
 		return score, parentMove, parentPiece
 	}
 
@@ -32,7 +33,7 @@ func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string,
 		var breakOuter bool
 		for piece, moves := range prunedMap {
 			for _, move := range moves {
-				resultMax, _, _ := makeMoveAndGenerate(move, piece, turn, board, level-1, initialTurn, alpha, beta)
+				resultMax, _, _ := makeMoveAndGenerate(move, piece, turn, board, level-1, initialTurn, alpha, beta, initialScore, initialPiecesCount)
 				if level == MaxRecursiveLevel {
 					fmt.Println(resultMax, move, piece)
 				}
@@ -54,7 +55,7 @@ func minMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string,
 		var breakmin bool
 		for piece, moves := range prunedMap {
 			for _, move := range moves {
-				resultMin, _, _ := makeMoveAndGenerate(move, piece, turn, board, level-1, initialTurn, alpha, beta)
+				resultMin, _, _ := makeMoveAndGenerate(move, piece, turn, board, level-1, initialTurn, alpha, beta, initialScore, initialPiecesCount)
 				if beta > alpha {
 					beta, minMove, minPiece = min(beta, resultMin, minMove, move, minPiece, piece)
 				} else {
@@ -98,15 +99,12 @@ func min(currentmin, newValue int, currentMove, move Move, currentPiece, piece I
 
 var count = 0
 
-func analyzeBoard(board [8][8]string, turn string, initialTurn string) int {
+func analyzeBoard(board [8][8]string, turn string, initialTurn string, initialScore, initialPiecesCount int) int {
 	count += 1
 	//Give Greater Value to same score diff but less pieces on board vs more pieces on the board
 	//Take into Account pawn progression on board, pieces defended
 	//Whether King in check or not
 	//If Any pieces defended vs not defended?
-	//stacked pawns are bad
-	//more available moves in comparison to other side is better
-	//look to add concurrency to increase depth
 	//always analyze current turn here
 
 	friendlyGame := ChessGame{board, initialTurn}
@@ -117,11 +115,47 @@ func analyzeBoard(board [8][8]string, turn string, initialTurn string) int {
 
 	friendlyValue := friendlyGame.getBoardValueForPieces(friendlyPieces)
 	enemyValue := enemyGame.getBoardValueForPieces(enemyPieces)
-
+	pieceValues := friendlyValue - enemyValue
+	if pieceValues >= initialScore && len(friendlyPieces) <= initialPiecesCount {
+		pieceValues += 2
+	}
 	friendMoves := getAllAvailableMovesForTurn(friendlyPieces, &friendlyGame)
 	enemyMoves := getAllAvailableMovesForTurn(enemyPieces, &enemyGame)
 
-	return friendlyValue - enemyValue + availableMoveScore(friendMoves, enemyMoves)
+	pawnScoreFriend := getPawnScorePosition(friendlyPieces)
+	pawnScoreEnemy := getPawnScorePosition(enemyPieces)
+	pawnScoreDiff := pawnScoreEnemy - pawnScoreFriend
+	knightScoreFriend, friendknightCount := getKnightPositionScore(friendlyPieces)
+	knightScoreEnemy, enemyknightCount := getKnightPositionScore(enemyPieces)
+	friendbishopCount := getBishopPositionScore(friendlyPieces)
+	enemybishopCount := getBishopPositionScore(enemyPieces)
+	knightScoreDiff := knightScoreEnemy - knightScoreFriend
+	// friendKing := getKing(initialTurn, board)
+	// enemyKing := getKing(enemyTurn, board)
+	if friendknightCount == 2 && friendbishopCount == 0 {
+		pieceValues -= 1
+	}
+	if friendbishopCount == 2 && friendknightCount == 0 {
+		pieceValues += 1
+	}
+	if enemyknightCount == 2 && enemybishopCount == 0 {
+		pieceValues += 1
+	}
+	if friendbishopCount == 2 && friendknightCount == 0 {
+		pieceValues -= 1
+	}
+	//xvalue check
+	// if friendKing.xLocation() != 0 || friendKing.xLocation() != 7 {
+	// 	pieceValues -= 1
+	// }
+	// if enemyKing.xLocation() != 0 || enemyKing.xLocation() != 7 {
+	// 	pieceValues += 1
+	// }
+	//if unable to castle take away a point
+	//when ahead the less pieces the better
+
+	scoreValue := pieceValues + availableMoveScore(friendMoves, enemyMoves) + pawnScoreDiff + knightScoreDiff
+	return scoreValue
 }
 
 func availableMoveScore(friendlen, enemylen map[IChessPiece][]Move) int {
@@ -151,13 +185,83 @@ func availableMoveScore(friendlen, enemylen map[IChessPiece][]Move) int {
 	return diff / 4
 }
 
-func makeMoveAndGenerate(move Move, piece IChessPiece, turn string, board [8][8]string, level int, initialTurn string, alpha, beta int) (int, Move, IChessPiece) {
+func getPawnScorePosition(pieces []IChessPiece) int {
+	//check double pawns, pawns near edges weaker
+	//Think about adding pawn progression scores
+	var zeroCol int
+	var oneCol int
+	var twoCol int
+	var threeCol int
+	var fourCol int
+	var fiveCol int
+	var sixCol int
+	var sevenCol int
+	for _, piece := range pieces {
+		if piece.getValue() == PawnScore {
+			switch {
+			case piece.yLocation() == 0:
+				zeroCol++
+			case piece.yLocation() == 1:
+				oneCol++
+			case piece.yLocation() == 2:
+				twoCol++
+			case piece.yLocation() == 3:
+				threeCol++
+			case piece.yLocation() == 4:
+				fourCol++
+			case piece.yLocation() == 5:
+				fiveCol++
+			case piece.yLocation() == 6:
+				sixCol++
+			case piece.yLocation() == 7:
+				sevenCol++
+			}
+		}
+	}
+
+	var score int
+	if zeroCol > 0 || sevenCol > 0 {
+		score += 1
+	}
+	if oneCol > 1 || twoCol > 1 || threeCol > 1 || fourCol > 1 || fiveCol > 1 || sixCol > 1 || sevenCol > 1 {
+		score += 1
+	}
+
+	return score
+
+}
+
+func getKnightPositionScore(pieces []IChessPiece) (int, int) {
+	var score int
+	var knightCount int
+	for _, piece := range pieces {
+		if piece.getValue() == KnightScore {
+			knightCount += 1
+			if piece.yLocation() == 0 || piece.yLocation() == 7 {
+				score += 1
+			}
+		}
+	}
+	return score, knightCount
+}
+
+func getBishopPositionScore(pieces []IChessPiece) int {
+	var bishopCount int
+	for _, piece := range pieces {
+		if piece.getValue() == KnightScore {
+			bishopCount += 1
+		}
+	}
+	return bishopCount
+}
+
+func makeMoveAndGenerate(move Move, piece IChessPiece, turn string, board [8][8]string, level int, initialTurn string, alpha, beta, initialScore, initialPiecesCount int) (int, Move, IChessPiece) {
 	newBoard := makeBoardMove(piece, move, board)
 	newTurn := getNextPlayerTurn(turn)
 	newChessGame := ChessGame{newBoard, newTurn}
 	pieces := newChessGame.getPiecesForTurn()
 	newMapping := getAllAvailableMovesForTurn(pieces, &newChessGame)
-	return minMax(newMapping, newBoard, newTurn, level, initialTurn, move, piece, alpha, beta)
+	return minMax(newMapping, newBoard, newTurn, level, initialTurn, move, piece, alpha, beta, initialScore, initialPiecesCount)
 }
 
 func pruneMinMax(moveMapping map[IChessPiece][]Move, board [8][8]string, turn string) map[IChessPiece][]Move {

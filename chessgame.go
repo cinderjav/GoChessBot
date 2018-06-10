@@ -137,23 +137,6 @@ func (chessGame *ChessGame) getKnights(pieces []IChessPiece) []IChessPiece {
 	return knightPieces
 }
 
-func (chessGame *ChessGame) executeMove() string {
-	pieces := chessGame.getPiecesForTurn()
-	// if len(pieces) < 9 {
-	// 	MaxRecursiveLevel = MaxRecursiveLevel + 1
-	// }
-	if len(pieces) < 6 {
-		MaxRecursiveLevel = MaxRecursiveLevel + 1
-	}
-	println(MaxRecursiveLevel)
-	movesMapping := getAllAvailableMovesForTurn(pieces, chessGame)
-	prunedMap := analyzeMoves(movesMapping, chessGame, 0, 0, chessGame.playerTurn, nil, 0, 0)
-	_, piece, move, _, _ := getHighestMoveScoreFromMap(prunedMap)
-	moveTranslation := translateMove(piece, move, chessGame.board)
-	fmt.Println(prunedMap)
-	return moveTranslation
-}
-
 func (chessGame *ChessGame) executeMoveMinMax() (string, int) {
 	pieces := chessGame.getPiecesForTurn()
 	// if len(pieces) < 9 {
@@ -161,7 +144,18 @@ func (chessGame *ChessGame) executeMoveMinMax() (string, int) {
 	// }
 	println(MaxRecursiveLevel)
 	movesMapping := getAllAvailableMovesForTurn(pieces, chessGame)
-	score, move, pieceMove := minMax(movesMapping, chessGame.board, chessGame.playerTurn, MaxRecursiveLevel, chessGame.playerTurn, Move{}, Pawn{}, -1000000000, 1000000000)
+
+	enemyTurn := getNextPlayerTurn(chessGame.playerTurn)
+	enemyGame := ChessGame{chessGame.board, enemyTurn}
+	enemyPieces := enemyGame.getPiecesForTurn()
+
+	friendlyValue := chessGame.getBoardValueForPieces(pieces)
+	enemyValue := enemyGame.getBoardValueForPieces(enemyPieces)
+
+	initialPiecesCount := len(pieces)
+	valueDiff := friendlyValue - enemyValue
+
+	score, move, pieceMove := minMax(movesMapping, chessGame.board, chessGame.playerTurn, MaxRecursiveLevel, chessGame.playerTurn, Move{}, Pawn{}, -1000000000, 1000000000, valueDiff, initialPiecesCount)
 	moveTranslation := translateMove(pieceMove, move, chessGame.board)
 	fmt.Println(moveTranslation)
 	return moveTranslation, score
